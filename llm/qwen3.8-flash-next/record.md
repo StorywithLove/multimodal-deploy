@@ -4,7 +4,7 @@
 - 模型：`Qwen/Qwen3.8-Flash-Next`
 - 量化：Unsloth `UD-Q4_K_XL` GGUF（约 104 GiB 下载体积）
 - 首个后端：ROCm 版 `llama.cpp`
-- 当前状态：**部署模块已完成；E1 已完成，E2–E4 测评待开始**
+- 当前状态：**部署模块已完成；E1–E2 测评完成，E3–E4 测评待开始**
 
 本次 GGUF 在启动时报告 `modalities: text`，因此本记录只覆盖文本推理和服务接口；图片、视频与视觉微调属于独立路线。
 
@@ -165,15 +165,28 @@ python benchmarks/openai_server_matrix.py \
 
 三组均为 8/8 成功、失败率 0%，每次实际生成 256 token。随着上下文目标增加，TTFT 从约 79 ms 增至 91 ms，单请求生成吞吐从 39.31 降至 37.67 token/s；HBM 峰值稳定在约 77.6 GiB，单个测试单元内增量约 0.02 GiB。这里的“目标上下文”是近似输入工作负载，实际 prompt token 已单独记录，不能把 8192 行直接解释为精确 8K prompt。
 
-结果文件：[脱敏结果](../../results/qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1.json) · [原始输出](../../results/qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1-hbm.json)
+结果文件：[E1 脱敏结果（含 HBM）](../../results/qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1.json)
 
 目的：先回答“在没有排队和批处理影响时，这条 GGUF + llama.cpp 路线的工作点是什么”。
 
 ### E2 — 并发 / 槽位
 
-- [ ] 保持 E1 的模型、量化、上下文和输出上限；逐级测试并发 1、2、4、8。
-- [ ] 每个并发级别检查当前 build 的 server slots / `--parallel` 设置，并将服务器参数写入结果标签。
-- [ ] 比较 aggregate throughput、P50 / P95 延迟、失败率和 HBM 增量。
+- [x] 保持 E1 的模型、量化、上下文和输出上限；逐级测试客户端并发 1、2、4、8。
+- [x] 服务端固定为 8 个 Slot：build 支持 `--kv-unified-per-slot` 时使用 `--parallel 8 --kv-unified-per-slot 10240`，否则使用 `--parallel 8 -c 81920`；客户端并发逐级为 1、2、4、8。
+- [x] 比较 aggregate throughput、P50 / P95 延迟、失败率和 HBM 增量。
+
+E2 结果：12 个测试单元（3 个目标上下文 × 4 个客户端并发），共 96/96 请求成功，失败率 0%；脚本 v0.2.2，所有单元均有有效 HBM 采样。
+
+| 客户端并发 | completion 吞吐（512 / 4096 / 8192，tok/s） | 各上下文 P95 最大值 | HBM 峰值范围 |
+|---:|---:|---:|---:|
+| 1 | 38.58 / 35.52 / 34.81 | 9.167 s | 80.392–80.414 GiB |
+| 2 | 54.10 / 63.65 / 62.28 | 14.276 s | 80.397–80.418 GiB |
+| 4 | 99.17 / 72.56 / 69.20 | 18.386 s | 80.373–80.396 GiB |
+| 8 | 117.92 / 70.02 / 65.10 | 31.246 s | 80.383–80.393 GiB |
+
+按三个上下文单元平均，客户端并发从 1 提升到 2、4、8 时，completion 吞吐约为 36.30、60.01、80.31、84.35 tok/s；并发 8 相比并发 4 吞吐仅小幅增加，但最差 P95 从 18.386 s 上升到 31.246 s，说明本配置的吞吐拐点约在并发 4。HBM 峰值稳定在 80.37–80.42 GiB，未出现 OOM；相比 E1 约 77.6 GiB 的单槽基线增加约 2.8 GiB，符合多 Slot / KV Cache 容量预留增加的现象，但不能仅凭占用差值断言全部来自 KV Cache。
+
+结果文件：[E2 脱敏结果（含 HBM）](../../results/qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e2.json)
 
 目的：找出“单请求很快”何时因排队、槽位或 KV cache 变成“整体服务变慢”。
 
@@ -208,7 +221,7 @@ python benchmarks/openai_server_matrix.py \
 - [x] 文本冒烟
 - [x] API、Web UI 与 DSW 登录态网关实际对话
 - [x] E1 单请求基线
-- [ ] E2 并发 / 槽位
+- [x] E2 并发 / 槽位
 - [ ] E3 长上下文 / KV cache
 - [ ] E4 量化权衡
 - [ ] vLLM 对照
