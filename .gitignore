@@ -1,0 +1,27 @@
+# 产出与大文件（不入库）
+**/outputs/*
+!**/outputs/.gitkeep
+*.mp4
+*.safetensors
+*.pth
+*.ckpt
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+.secrets/
+
+# 临时与日志
+tmp/
+*.log
+nohup.out
