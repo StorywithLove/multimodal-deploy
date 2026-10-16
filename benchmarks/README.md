@@ -26,4 +26,6 @@ Each JSON contains the endpoint label, host metadata, matrix settings, per-reque
 
 The target context is a workload input, not a claim about exact tokenizer length. Aggregates use the actual `usage.prompt_tokens` and `usage.completion_tokens` when the server returns them; missing usage is reported instead of guessed.
 
+The deterministic final instruction deliberately runs until the configured generation limit, so completion throughput measures decoding rather than a one-token greeting. It is a serving workload, not a quality evaluation.
+
 `record.md` is the interpretation layer: it explains server flags, anomalies and conclusions, and links to the JSON. The script is the measuring instrument; the JSON is the evidence.

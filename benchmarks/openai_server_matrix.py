@@ -25,7 +25,7 @@ import urllib.request
 from typing import Any
 
 
-SCRIPT_VERSION = "0.1.0"
+SCRIPT_VERSION = "0.2.0"
 
 
 def utc_now() -> str:
@@ -112,7 +112,16 @@ def build_prompt(target_tokens: int) -> str:
         "Keep the input context and answer the final instruction. "
     )
     body = (unit * max(1, (target_tokens * 4) // len(unit) + 1))[: target_tokens * 4]
-    return body + "\nFinal instruction: reply with a short status word."
+    # A short answer would make decode throughput meaningless.  This asks the
+    # model to consume the completion budget while remaining deterministic at
+    # temperature 0; the server-reported completion count remains the source
+    # of truth for every result.
+    return (
+        body
+        + "\nFinal instruction: repeatedly output the exact word 'benchmark' "
+        "separated by one space until the generation limit stops you. "
+        "Do not add an explanation, punctuation, or closing text."
+    )
 
 
 def make_payload(

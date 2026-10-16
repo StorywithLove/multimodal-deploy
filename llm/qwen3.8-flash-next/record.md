@@ -132,6 +132,25 @@ curl -sS http://127.0.0.1:8000/v1/models
 - [ ] 记录 TTFT、实际 prompt / completion token、端到端延迟、生成吞吐和 HBM 基线 / 峰值。
 - [ ] 将结果保存为 `results/qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1.json`。
 
+首次正式跑数前，将服务重启为单槽：`-c 10240 --parallel 1`。其中 10240 是服务容量，给目标 8192 prompt、最多 256 个生成 token 和模板余量留出空间；它不改变本实验的三个工作负载目标。测量期间不通过 Web UI 发送其他请求。共同基准器的固定末尾指令会尽量消耗生成上限，实际 token 数仍以 API 返回的 `usage` 为准。
+
+```bash
+# 终端 A：先在旧 llama-server 终端按 Ctrl+C，再以单槽启动。
+"$WORK/llama.cpp/build/bin/llama-server" \
+  -m "$MODEL_FILE" -ngl 999 -c 10240 --parallel 1 --jinja \
+  --host 127.0.0.1 --port 8000
+
+# 终端 B：确认服务后生成正式 E1 证据文件。
+cd /mnt/workspace
+curl -fsS http://127.0.0.1:8000/health && echo
+python benchmarks/openai_server_matrix.py \
+  --config configs/benchmark/mi300x-serving-matrix.json \
+  --endpoint http://127.0.0.1:8000/v1/chat/completions \
+  --label qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1 \
+  --contexts 512,4096,8192 --concurrencies 1 \
+  --output results/qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1.json
+```
+
 目的：先回答“在没有排队和批处理影响时，这条 GGUF + llama.cpp 路线的工作点是什么”。
 
 ### E2 — 并发 / 槽位
