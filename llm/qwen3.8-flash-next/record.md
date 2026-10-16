@@ -136,6 +136,8 @@ curl -sS http://127.0.0.1:8000/v1/models
 
 下载 UI 时设置过代理也不影响 v0.2.1+ 的本地测量：对 `localhost` / `127.0.0.1` / `::1` endpoint，基准器会自动绕过代理。
 
+首次 E1 运行的请求、TTFT 和吞吐数据有效，但 GPU 采样为 0（ROCm-SMI 数值字符串未被旧解析器识别），因此不作为最终归档。v0.2.2+ 修复后先以 1 个请求验证 `gpu.samples > 0`，再重跑正式 E1。
+
 ```bash
 # 终端 A：先在旧 llama-server 终端按 Ctrl+C，再以单槽启动。
 "$WORK/llama.cpp/build/bin/llama-server" \

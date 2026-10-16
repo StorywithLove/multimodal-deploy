@@ -27,7 +27,7 @@ from urllib.parse import urlparse
 from typing import Any
 
 
-SCRIPT_VERSION = "0.2.1"
+SCRIPT_VERSION = "0.2.2"
 
 
 def utc_now() -> str:
@@ -284,10 +284,18 @@ def run_ttft_probe(
 
 
 def value_to_gib(value: Any, key: str) -> float | None:
-    if not isinstance(value, (int, float)) or isinstance(value, bool):
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, str):
+        try:
+            number = float(value.strip().replace(",", ""))
+        except ValueError:
+            return None
+    elif isinstance(value, (int, float)):
+        number = float(value)
+    else:
         return None
     lower = key.lower()
-    number = float(value)
     if "(b)" in lower or "bytes" in lower or lower.endswith("_b"):
         return number / (1024**3)
     if "mb" in lower:
@@ -341,8 +349,11 @@ class GpuSampler:
                 raise RuntimeError(completed.stderr.strip() or "GPU command failed")
             parsed = json.loads(completed.stdout)
             used_gib = find_vram_used(parsed)
-            if used_gib is not None:
-                self.samples_gib.append(round(used_gib, 4))
+            if used_gib is None:
+                raise RuntimeError(
+                    "GPU command JSON contains no recognized VRAM-used value"
+                )
+            self.samples_gib.append(round(used_gib, 4))
         except Exception as exc:
             message = f"{type(exc).__name__}: {exc}"
             if message not in self.errors:

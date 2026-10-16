@@ -30,4 +30,6 @@ The deterministic final instruction deliberately runs until the configured gener
 
 For `localhost`, `127.0.0.1`, and `::1` endpoints, the client bypasses inherited HTTP(S) proxy settings. This keeps a temporary download proxy from intercepting the local serving API.
 
+ROCm-SMI may encode VRAM counters as numeric strings; the sampler accepts both strings and numeric JSON values. If a configured GPU command yields no recognized counter, the result records an explicit sampling error instead of silently reporting zero samples.
+
 `record.md` is the interpretation layer: it explains server flags, anomalies and conclusions, and links to the JSON. The script is the measuring instrument; the JSON is the evidence.
