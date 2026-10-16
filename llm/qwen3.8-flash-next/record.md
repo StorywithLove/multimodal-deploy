@@ -134,6 +134,8 @@ curl -sS http://127.0.0.1:8000/v1/models
 
 首次正式跑数前，将服务重启为单槽：`-c 10240 --parallel 1`。其中 10240 是服务容量，给目标 8192 prompt、最多 256 个生成 token 和模板余量留出空间；它不改变本实验的三个工作负载目标。测量期间不通过 Web UI 发送其他请求。共同基准器的固定末尾指令会尽量消耗生成上限，实际 token 数仍以 API 返回的 `usage` 为准。
 
+下载 UI 时设置过代理也不影响 v0.2.1+ 的本地测量：对 `localhost` / `127.0.0.1` / `::1` endpoint，基准器会自动绕过代理。
+
 ```bash
 # 终端 A：先在旧 llama-server 终端按 Ctrl+C，再以单槽启动。
 "$WORK/llama.cpp/build/bin/llama-server" \

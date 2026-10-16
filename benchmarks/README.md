@@ -28,4 +28,6 @@ The target context is a workload input, not a claim about exact tokenizer length
 
 The deterministic final instruction deliberately runs until the configured generation limit, so completion throughput measures decoding rather than a one-token greeting. It is a serving workload, not a quality evaluation.
 
+For `localhost`, `127.0.0.1`, and `::1` endpoints, the client bypasses inherited HTTP(S) proxy settings. This keeps a temporary download proxy from intercepting the local serving API.
+
 `record.md` is the interpretation layer: it explains server flags, anomalies and conclusions, and links to the JSON. The script is the measuring instrument; the JSON is the evidence.

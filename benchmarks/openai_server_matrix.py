@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import concurrent.futures
 import datetime as dt
+import ipaddress
 import json
 import os
 import platform
@@ -22,10 +23,11 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from urllib.parse import urlparse
 from typing import Any
 
 
-SCRIPT_VERSION = "0.2.0"
+SCRIPT_VERSION = "0.2.1"
 
 
 def utc_now() -> str:
@@ -59,6 +61,28 @@ def percentile(values: list[float], fraction: float) -> float | None:
     return ordered[low] * (1.0 - weight) + ordered[high] * weight
 
 
+def is_loopback_url(url: str) -> bool:
+    """Return whether a request must stay local rather than use a proxy."""
+    hostname = urlparse(url).hostname
+    if hostname is None:
+        return False
+    if hostname.lower() == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(hostname).is_loopback
+    except ValueError:
+        return False
+
+
+def open_request(request: urllib.request.Request, timeout_s: float):
+    """Open requests while preserving local API traffic from download proxies."""
+    if is_loopback_url(request.full_url):
+        return urllib.request.build_opener(urllib.request.ProxyHandler({})).open(
+            request, timeout=timeout_s
+        )
+    return urllib.request.urlopen(request, timeout=timeout_s)
+
+
 def json_request(
     endpoint: str,
     payload: dict[str, Any],
@@ -75,7 +99,7 @@ def json_request(
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=timeout_s) as response:
+        with open_request(request, timeout_s) as response:
             return response.status, json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         raw = exc.read().decode("utf-8", errors="replace")
@@ -93,7 +117,7 @@ def discover_model(endpoint: str, timeout_s: float) -> str:
     else:
         models_endpoint = endpoint.rstrip("/") + "/v1/models"
     request = urllib.request.Request(models_endpoint, headers={"Accept": "application/json"})
-    with urllib.request.urlopen(request, timeout=timeout_s) as response:
+    with open_request(request, timeout_s) as response:
         data = json.loads(response.read().decode("utf-8"))
     candidates = data.get("data") or data.get("models") or []
     if candidates:
@@ -236,7 +260,7 @@ def run_ttft_probe(
     first_event_s: float | None = None
     first_output_s: float | None = None
     try:
-        with urllib.request.urlopen(request, timeout=timeout_s) as response:
+        with open_request(request, timeout_s) as response:
             for raw_line in response:
                 line = raw_line.decode("utf-8", errors="replace").strip()
                 if not line.startswith("data:") or line[5:].strip() == "[DONE]":
