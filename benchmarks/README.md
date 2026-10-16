@@ -33,3 +33,22 @@ For `localhost`, `127.0.0.1`, and `::1` endpoints, the client bypasses inherited
 ROCm-SMI may encode VRAM counters as numeric strings; the sampler accepts both strings and numeric JSON values. If a configured GPU command yields no recognized counter, the result records an explicit sampling error instead of silently reporting zero samples.
 
 `record.md` is the interpretation layer: it explains server flags, anomalies and conclusions, and links to the JSON. The script is the measuring instrument; the JSON is the evidence.
+
+## Fixed quality probe
+
+`openai_quality_probe.py` sends the same fixed prompt set to each model. It records the prompt, response text, HTTP status, request latency, usage tokens, server-reported generation speed when available, and an observed output-token rate.
+
+The repository includes a fixed public MT-Bench Mini-8 subset at
+`benchmarks/quality/mtbench-mini-8.json`:
+
+```bash
+python benchmarks/openai_quality_probe.py \
+  --questions benchmarks/quality/mtbench-mini-8.json \
+  --endpoint http://127.0.0.1:8000/v1/chat/completions \
+  --label qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e4-quality \
+  --max-tokens 512 \
+  --temperature 0 \
+  --output results/qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e4-quality.json
+```
+
+Run the same command again against Q5 after restarting the server and change only `--label` and `--output`. The script returns exit code `2` if any question fails, while still preserving the partial JSON for diagnosis. The observed output-token rate includes request overhead; when llama.cpp returns `timings.predicted_per_second`, that server-side value is preserved separately.

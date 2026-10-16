@@ -4,7 +4,7 @@
 - 模型：`Qwen/Qwen3.8-Flash-Next`
 - 量化：Unsloth `UD-Q4_K_XL` GGUF（约 104 GiB 下载体积）
 - 首个后端：ROCm 版 `llama.cpp`
-- 当前状态：**部署模块已完成；E1–E3 基准与 E4-Q5 性能基准完成，E4 质量/加载时间评测待开始**
+- 当前状态：**部署模块已完成；E1–E3 基准、E4-Q5 性能基准及 Q4/Q5 质量可用性抽样完成；加载时间未测，量化质量优劣仍未定论。**
 
 本次 GGUF 在启动时报告 `modalities: text`，因此本记录只覆盖文本推理和服务接口；图片、视频与视觉微调属于独立路线。
 
@@ -227,8 +227,9 @@ E3 补充实验：使用 Q4 模型、`--parallel 4`，build 支持 `--kv-unified
 
 - [x] 下载并测试同一模型族的相邻量化版本 `UD-Q5_K_XL`。
 - [x] 复用 E1 工作负载完成 Q5 性能测量。
-- [ ] 补充固定小型质量提示集。
-- [ ] 完成质量、TTFT、吞吐、HBM 与加载时间综合比较；本轮已完成 TTFT、吞吐与 HBM，未记录质量和加载时间。
+- [x] 补充固定小型质量提示集：MT-Bench Mini-8（8 个类别各取首轮 1 题）。
+- [x] 在相同 API、`temperature=0`、`max_tokens=512` 下完成 Q4/Q5 质量可用性抽样。
+- [ ] 记录加载时间；TTFT、吞吐与 HBM 已完成，但当前质量抽样不足以断言 Q5 质量更优。
 
 E4-Q5 结果：3 个目标上下文 × 单并发，共 24/24 请求成功，失败率 0%；脚本 v0.2.2，279 个 HBM 样本均有效。
 
@@ -238,9 +239,18 @@ E4-Q5 结果：3 个目标上下文 × 单并发，共 24/24 请求成功，失�
 | 4096 | 22,408 | 112.9 ms | 6.613 / 6.643 s | 38.556 tok/s | 97.444 → 97.465 GiB |
 | 8192 | 44,056 | 107.5 ms | 6.727 / 6.771 s | 37.898 tok/s | 97.418 → 97.440 GiB |
 
-与 E1 的 `UD-Q4_K_XL` 基线相比，Q5 在三个上下文上的生成速度约高 0.23 tok/s（约 0.6%），但 HBM 峰值从约 77.6 GiB 增至约 97.4 GiB，增加约 19.9 GiB；因此当前证据显示 Q5 的额外显存成本明显，而 serving 吞吐收益很小。质量提示集和加载时间尚未测量，暂不据此断言 Q5 的综合性价比更高；是否值得使用 Q5，取决于后续质量评测能否证明精度收益。
+与 E1 的 `UD-Q4_K_XL` 基线相比，Q5 在三个上下文上的生成速度约高 0.23 tok/s（约 0.6%），但 HBM 峰值从约 77.6 GiB 增至约 97.4 GiB，增加约 19.9 GiB；因此当前证据显示 Q5 的额外显存成本明显，而 serving 吞吐收益很小。
 
-结果文件：[E4-Q5 脱敏结果（含 HBM）](../../results/qwen3.8-flash-next-ud-q5-k-xl-llamacpp-e4-q5.json)
+质量可用性抽样：固定使用 MT-Bench Mini-8（`writing`、`roleplay`、`reasoning`、`math`、`coding`、`extraction`、`stem`、`humanities` 各一题的首轮），经同一 `llama-server` OpenAI-compatible 端点分别测试 Q4 与 Q5。两组均为 8/8 HTTP 200、失败率 0%，且 completion token 总数同为 3,037。
+
+| 量化 | 平均端到端耗时 | 平均观测输出速率 | 达到 512 token 上限的题数 | 空最终回答 |
+|---|---:|---:|---:|---|
+| `UD-Q4_K_XL` | 9.961 s | 37.428 tok/s | 5 / 8 | `coding` |
+| `UD-Q5_K_XL` | 9.877 s | 37.740 tok/s | 4 / 8 | `roleplay`、`coding` |
+
+Q5 的平均观测输出速率仅高约 0.31 tok/s（约 0.8%），与 E4 serving 基准中的微小差异一致。两组均有多题碰到 512 token 上限，且空最终回答很可能与默认保留 reasoning 输出有关；因此本轮证明了端到端接口、固定提示集和响应归档均可用，但**不能据此断言 Q5 的文本质量优于 Q4**。后续若需严谨质量结论，应以相同的 `--no-reasoning-preserve` 服务配置重跑两组，或提高两边相同的输出上限；本轮 GPU 时间耗尽，不补跑。
+
+结果文件：[E4-Q5 脱敏结果（含 HBM）](../../results/qwen3.8-flash-next-ud-q5-k-xl-llamacpp-e4-q5.json)、[Q4 质量抽样](../../results/qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e4-quality.json)、[Q5 质量抽样](../../results/qwen3.8-flash-next-ud-q5-k-xl-llamacpp-e4-quality.json)
 
 目的：得到针对单张 192GB MI300X 的量化选择建议，而不是泛化为所有硬件的结论。
 
