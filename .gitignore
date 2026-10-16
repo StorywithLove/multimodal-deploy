@@ -25,3 +25,4 @@ secrets/
 tmp/
 *.log
 nohup.out
+results/*-pre-hbm.json

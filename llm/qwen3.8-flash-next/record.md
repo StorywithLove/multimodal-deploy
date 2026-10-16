@@ -4,7 +4,7 @@
 - 模型：`Qwen/Qwen3.8-Flash-Next`
 - 量化：Unsloth `UD-Q4_K_XL` GGUF（约 104 GiB 下载体积）
 - 首个后端：ROCm 版 `llama.cpp`
-- 当前状态：**部署模块已完成；E1–E4 测评待开始**
+- 当前状态：**部署模块已完成；E1 已完成，E2–E4 测评待开始**
 
 本次 GGUF 在启动时报告 `modalities: text`，因此本记录只覆盖文本推理和服务接口；图片、视频与视觉微调属于独立路线。
 
@@ -124,19 +124,19 @@ curl -sS http://127.0.0.1:8000/v1/models
 
 换言之，`record.md` 是实验笔记和结论，配置文件是“什么算公平负载”，脚本是量尺，JSON 是证据。后续 vLLM / SGLang 只要提供同样的 OpenAI-compatible endpoint，即可使用同一量尺；模型格式或精度不一致时，结果会明确标注为“部署路线比较”，不伪装成纯框架对比。
 
-基准器验证：已在 AMD MI300X 实例完成 dry-run；配置成功展开为 12 个测试单元（上下文 512/4096/8192 × 并发 1/2/4/8），尚未产生正式性能结果。
+基准器验证：已在 AMD MI300X 实例完成 dry-run；配置成功展开为 12 个测试单元（上下文 512/4096/8192 × 并发 1/2/4/8）。E1 已完成单并发正式测量。
 
 ### E1 — 单请求基线
 
-- [ ] 固定单槽 / 单并发，依次测目标上下文 512、4096、8192。
-- [ ] 记录 TTFT、实际 prompt / completion token、端到端延迟、生成吞吐和 HBM 基线 / 峰值。
-- [ ] 将结果保存为 `results/qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1.json`。
+- [x] 固定单槽 / 单并发，依次测目标上下文 512、4096、8192。
+- [x] 记录 TTFT、实际 prompt / completion token、端到端延迟、生成吞吐和 HBM 基线 / 峰值。
+- [x] 将结果保存为 `results/qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1.json`。
 
 首次正式跑数前，将服务重启为单槽：`-c 10240 --parallel 1`。其中 10240 是服务容量，给目标 8192 prompt、最多 256 个生成 token 和模板余量留出空间；它不改变本实验的三个工作负载目标。测量期间不通过 Web UI 发送其他请求。共同基准器的固定末尾指令会尽量消耗生成上限，实际 token 数仍以 API 返回的 `usage` 为准。
 
 下载 UI 时设置过代理也不影响 v0.2.1+ 的本地测量：对 `localhost` / `127.0.0.1` / `::1` endpoint，基准器会自动绕过代理。
 
-首次 E1 运行的请求、TTFT 和吞吐数据有效，但 GPU 采样为 0（ROCm-SMI 数值字符串未被旧解析器识别），因此不作为最终归档。v0.2.2+ 修复后先以 1 个请求验证 `gpu.samples > 0`，再重跑正式 E1。
+首次 E1 运行曾因 ROCm-SMI 数值字符串未被旧解析器识别而缺少 HBM 样本；v0.2.2 修复后，探针和正式 E1 均确认 `gpu.samples > 0`。
 
 ```bash
 # 终端 A：先在旧 llama-server 终端按 Ctrl+C，再以单槽启动。
@@ -154,6 +154,18 @@ python benchmarks/openai_server_matrix.py \
   --contexts 512,4096,8192 --concurrencies 1 \
   --output results/qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1.json
 ```
+
+正式结果（服务参数：`-ngl 999 -c 10240 --parallel 1 --jinja`）：
+
+| 目标上下文 | 实际 prompt / 请求 | TTFT | P50 / P95 | completion 吞吐 | HBM 基线 → 峰值 |
+|---:|---:|---:|---:|---:|---:|
+| 512 | 433 | 78.9 ms | 6.481 / 6.527 s | 39.31 tok/s | 77.5343 → 77.5566 GiB |
+| 4096 | 2801 | 83.0 ms | 6.644 / 6.711 s | 38.32 tok/s | 77.5594 → 77.5803 GiB |
+| 8192 | 5507 | 91.4 ms | 6.763 / 6.804 s | 37.67 tok/s | 77.5330 → 77.5555 GiB |
+
+三组均为 8/8 成功、失败率 0%，每次实际生成 256 token。随着上下文目标增加，TTFT 从约 79 ms 增至 91 ms，单请求生成吞吐从 39.31 降至 37.67 token/s；HBM 峰值稳定在约 77.6 GiB，单个测试单元内增量约 0.02 GiB。这里的“目标上下文”是近似输入工作负载，实际 prompt token 已单独记录，不能把 8192 行直接解释为精确 8K prompt。
+
+结果文件：[脱敏结果](../../results/qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1.json) · [原始输出](../../results/qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1-hbm.json)
 
 目的：先回答“在没有排队和批处理影响时，这条 GGUF + llama.cpp 路线的工作点是什么”。
 
@@ -195,7 +207,7 @@ python benchmarks/openai_server_matrix.py \
 - [x] 编译 ROCm llama.cpp
 - [x] 文本冒烟
 - [x] API、Web UI 与 DSW 登录态网关实际对话
-- [ ] E1 单请求基线
+- [x] E1 单请求基线
 - [ ] E2 并发 / 槽位
 - [ ] E3 长上下文 / KV cache
 - [ ] E4 量化权衡
