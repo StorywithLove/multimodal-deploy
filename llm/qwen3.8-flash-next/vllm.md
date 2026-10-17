@@ -132,6 +132,29 @@ server_rc=${PIPESTATUS[0]}
 echo "server exit=$server_rc"
 ```
 
+服务启动后，在另一个终端执行下面的验证命令。`health_http=200`、能够返回模型列表，并且聊天请求返回 `finish_reason=stop`，才算本轮启动冒烟测试通过：
+
+```bash
+curl -sS -o /dev/null \
+  -w 'health_http=%{http_code}\n' \
+  http://127.0.0.1:8000/health
+
+curl -sS http://127.0.0.1:8000/v1/models
+echo
+
+curl -sS http://127.0.0.1:8000/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "qwen3.8-flash-next-fp8",
+    "messages": [
+      {"role": "user", "content": "请用一句话说明什么是量化模型。"}
+    ],
+    "max_tokens": 64,
+    "temperature": 0
+  }'
+echo
+```
+
 #### 4. 下一步：持久目录中的非 eager 对照
 
 先复现上面的 eager 基线，再在同一持久环境、同一模型和 `max_model_len=1024` 下，仅移除 `--enforce-eager`，尝试关闭编译：
