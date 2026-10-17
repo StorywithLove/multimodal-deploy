@@ -84,9 +84,32 @@ replay() {
     2>&1 | tee "${LOG_DIR}/vllm0310-persistent-eager.log"
 }
 
+verify() {
+  test -x "${PERSIST_VENV}/bin/python"
+  "${PERSIST_VENV}/bin/python" - <<'PY'
+import sys
+import torch
+import triton
+import vllm
+
+print("python:", sys.executable)
+print("sys.prefix:", sys.prefix)
+print("vllm:", vllm.__version__)
+print("vllm path:", vllm.__file__)
+print("torch:", torch.__version__)
+print("torch hip:", torch.version.hip)
+print("triton:", triton.__version__)
+
+assert sys.prefix.startswith("/mnt/workspace/artifacts/")
+assert vllm.__file__.startswith(sys.prefix)
+PY
+  echo "Persistent vLLM environment: ${PERSIST_VENV}"
+}
+
 case "${MODE}" in
   persist) persist ;;
   replay) replay ;;
+  verify) verify ;;
   *) echo "usage: $0 [persist|replay]" >&2; exit 2 ;;
 esac
 
