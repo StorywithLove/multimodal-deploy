@@ -46,13 +46,64 @@ multimodal-deploy/
 
 ## 当前状态
 
-| 模态 | 模型 / 路线 | 任务 | 状态 | 运行环境 | 记录 |
-|---|---|---|---|---|---|
-| 语言 | Qwen3.8-Flash-Next / UD-Q4_K_XL | 文本 LLM 推理与服务 | llama.cpp E1–E4 已完成 | ModelScope AMD MI300X 192GB | [llama.cpp](llm/qwen3.8-flash-next/llama.cpp.md) |
-| 语言 | Qwen3.8-Flash-Next / FP8 Safetensors | 文本 LLM 推理与服务 | vLLM 0.31.0+rocm723 源码构建完成；`--enforce-eager` 启动、健康检查和单请求通过；默认 V1 编译路径仍有动态形状错误 | AMD MI300X 192GB / ROCm 7.2.3 | [vLLM](llm/qwen3.8-flash-next/vllm.md) |
-| 视频 | Wan2.2-T2V-A14B | 文生视频 | 已跑通 | ModelScope AMD MI300X（ROCm） | [record](video/wan2.2-t2v-a14b/record.md) |
-| 视频 | Wan2.2-TI2V-5B | 文 / 图生视频 | 待开始 | ModelScope AMD MI300X（ROCm） | [record](video/wan2.2-ti2v-5b/record.md) |
-| 图片 / 视觉 | 待选模型 | 图像生成、视觉理解与微调 | 规划中 | 待定 | [vision](vision/README.md) |
+<table>
+<thead>
+<tr>
+<th>模态</th>
+<th>模型</th>
+<th>分支 / 路线</th>
+<th>任务</th>
+<th>状态</th>
+<th>运行环境</th>
+<th>记录</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td rowspan="2">语言</td>
+<td rowspan="2">Qwen3.8-Flash-Next</td>
+<td>UD-Q4_K_XL / GGUF + llama.cpp</td>
+<td>文本 LLM 推理与服务</td>
+<td>llama.cpp E1–E4 已完成</td>
+<td>ModelScope AMD MI300X 192GB</td>
+<td><a href="llm/qwen3.8-flash-next/llama.cpp.md">llama.cpp</a></td>
+</tr>
+<tr>
+<td>FP8 Safetensors + vLLM</td>
+<td>文本 LLM 推理与服务</td>
+<td>vLLM 0.31.0+rocm723 源码构建完成；<code>--enforce-eager</code> 启动、健康检查和单请求通过；默认 V1 编译路径仍有动态形状错误</td>
+<td>AMD MI300X 192GB / ROCm 7.2.3</td>
+<td><a href="llm/qwen3.8-flash-next/vllm.md">vLLM</a></td>
+</tr>
+<tr>
+<td>视频</td>
+<td>Wan2.2-T2V-A14B</td>
+<td>文生视频</td>
+<td>文生视频</td>
+<td>已跑通</td>
+<td>ModelScope AMD MI300X（ROCm）</td>
+<td><a href="video/wan2.2-t2v-a14b/record.md">record</a></td>
+</tr>
+<tr>
+<td>视频</td>
+<td>Wan2.2-TI2V-5B</td>
+<td>文 / 图生视频</td>
+<td>文 / 图生视频</td>
+<td>待开始</td>
+<td>ModelScope AMD MI300X（ROCm）</td>
+<td><a href="video/wan2.2-ti2v-5b/record.md">record</a></td>
+</tr>
+<tr>
+<td>图片 / 视觉</td>
+<td>待选模型</td>
+<td>图像生成、视觉理解与微调</td>
+<td>图像生成、视觉理解与微调</td>
+<td>规划中</td>
+<td>待定</td>
+<td><a href="vision/README.md">vision</a></td>
+</tr>
+</tbody>
+</table>
 
 状态口径：
 
@@ -65,3 +116,4 @@ multimodal-deploy/
 - 不提交模型权重、视频 / 图片大文件、临时日志、云端 URL、Cookie 或访问令牌。
 - 运行 API 示例前，通过环境变量注入凭据，例如 `MODELSCOPE_API_TOKEN`，不要把令牌写入源文件。
 - 对外发布前仍需确定代码托管平台、仓库可见性和许可证；本地 Git 仓库可在这些选择确定后直接推送。
+
