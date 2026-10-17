@@ -144,6 +144,82 @@ curl -fsS http://127.0.0.1:8000/v1/chat/completions \
 
 若启动 OOM 或模型架构不识别，保存完整启动日志并停止；这属于 MI300X 兼容性结果，不要直接调大上下文或打开更多优化来掩盖问题。
 
+## 2026-10-17 vLLM 0.31.0 持久化复现结果
+
+本轮已经完成了 vLLM 0.31.0 的功能性启动预检。与之前的 v0.30.0 超时不同，v0.31.0 已经完成 AMD Qwen4Exp PLE FP8 权重加载：
+
+- `Qwen4ExpPLEFp8EmbeddingMethod` 初始化成功；
+- 131 个 Safetensors 分片通过权重加载阶段；
+- `weight_dtype=torch.float8_e4m3fn`，PLE 的 FP8 权重路径已实际执行；
+- `Application startup complete`；
+- `/health` 返回 HTTP 200，`/v1/models` 返回 `qwen3.8-flash-next-fp8`；
+- 单请求聊天冒烟返回 `finish_reason=stop`。
+
+本轮使用 `--enforce-eager`。不带该参数时，模型同样能进入权重加载阶段，但随后在 Torch Dynamo 动态形状编译阶段失败，错误集中在 `query_start_loc.size()[0]` 的约束冲突。因此当前结论是：**vLLM 0.31.0 + AMD FP8 PLE 已具备功能可用性，默认 V1 编译路径仍需单独排障；eager 模式暂作为可复现基线。**
+
+成功结果见 [`qwen3.8-flash-next-vllm-fp8-e0-eager-startup.json`](../../results/llm/qwen3.8-flash-next/qwen3.8-flash-next-vllm-fp8-e0-eager-startup.json)。
+
+### 持久化边界
+
+持久目录只保存 vLLM 运行所需的虚拟环境、vLLM wheel、源码归档、依赖清单、版本指纹和日志；不复制约 173 GiB 的 FP8 模型。模型仍由当前实例单独下载到临时模型目录，避免把模型文件重复写入工作区。
+
+仓库中的 [`vllm-persistent-replay.sh`](vllm-persistent-replay.sh) 提供两个动作：
+
+```bash
+# 当前实例仍保留 /root/tmp 构建物时执行一次
+bash llm/qwen3.8-flash-next/vllm-persistent-replay.sh persist
+
+# 后续从持久目录启动；只需要把 MODEL_DIR 指向当前实例的模型目录
+export MODEL_DIR=/root/tmp/qwen3.8-flash-next/Qwen3.8-Flash-Next-FP8
+bash llm/qwen3.8-flash-next/vllm-persistent-replay.sh replay
+```
+
+`replay` 使用 `/mnt/workspace/artifacts/qwen3.8-flash-next-vllm/vllm0310-20261017/venv-vllm-0310` 中的 Python 和 vLLM，不依赖 `/root/tmp` 中的 vLLM 源码或虚拟环境；`MODEL_DIR` 是唯一保留在临时空间的模型路径。
+
+### 下一步：持久目录无 eager 对照
+
+先从持久环境复现上面的 eager 结果，再在同一个持久环境、同一个模型和 `max_model_len=1024` 下移除 `--enforce-eager`，只改变编译配置。建议先尝试：
+
+```bash
+export ARTIFACT_ROOT=/mnt/workspace/artifacts/qwen3.8-flash-next-vllm
+export PERSIST_ROOT="$ARTIFACT_ROOT/vllm0310-20261017"
+export PERSIST_VENV="$PERSIST_ROOT/venv-vllm-0310"
+export MODEL_DIR=/root/tmp/qwen3.8-flash-next/Qwen3.8-Flash-Next-FP8
+export LOG="$ARTIFACT_ROOT/logs/vllm0310-persistent-no-eager.log"
+
+export ROCM_HOME=/opt/rocm
+export ROCM_PATH=/opt/rocm
+export PATH="/opt/rocm/bin:/opt/rocm/llvm/bin:$PATH"
+export LD_LIBRARY_PATH="/opt/rocm/lib:${LD_LIBRARY_PATH:-}"
+export PYTORCH_ROCM_ARCH=gfx942
+export VLLM_ENGINE_READY_TIMEOUT_S=1200
+
+mkdir -p "$ARTIFACT_ROOT/logs"
+
+"$PERSIST_VENV/bin/python" -m vllm.entrypoints.openai.api_server \
+  --model "$MODEL_DIR" \
+  --served-model-name qwen3.8-flash-next-fp8 \
+  --host 127.0.0.1 --port 8000 \
+  --tensor-parallel-size 1 \
+  --dtype auto \
+  --gpu-memory-utilization 0.92 \
+  --cpu-offload-gb 8 \
+  --max-model-len 1024 \
+  --max-num-seqs 1 \
+  --compilation-config '{"level":0}' \
+  2>&1 | tee "$LOG"
+```
+
+这一步用于判断“关闭编译但不打开 eager”是否能避开当前 `query_start_loc` 约束错误。若 vLLM 0.31.0 拒绝该 `compilation-config`，不要改动环境，保留错误日志并回到 `--enforce-eager` 基线；只有该控制变量明确后，才考虑 V0 引擎或 Triton 版本调整。
+
+当前 vLLM 结果文件：
+
+```text
+results/llm/qwen3.8-flash-next/
+  qwen3.8-flash-next-vllm-fp8-e0-startup.json          # v0.30.0 历史超时
+  qwen3.8-flash-next-vllm-fp8-e0-eager-startup.json   # v0.31.0 eager 成功
+```
+
 ## 测评顺序
 
 1. 单请求冒烟：`max_tokens=256`；
@@ -160,4 +236,5 @@ results/llm/qwen3.8-flash-next/
   qwen3.8-flash-next-vllm-fp8-e3.json
   qwen3.8-flash-next-vllm-fp8-e4-quality.json
 ```
+
 
