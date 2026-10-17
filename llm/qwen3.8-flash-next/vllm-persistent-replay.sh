@@ -24,6 +24,17 @@ persist() {
   # Copy the runnable Python environment, but never copy MODEL_DIR.
   if [[ ! -x "${PERSIST_VENV}/bin/python" ]]; then
     cp -a "${SOURCE_VENV}/." "${PERSIST_VENV}/"
+    # venv activation files record the original temporary path. Rewrite only
+    # those path markers so future interactive shells point at the persistent
+    # environment too; package files and model paths are untouched.
+    for activation_file in \
+      "${PERSIST_VENV}/bin/activate" \
+      "${PERSIST_VENV}/bin/activate.csh" \
+      "${PERSIST_VENV}/bin/activate.fish"; do
+      if [[ -f "${activation_file}" ]]; then
+        sed -i "s#${SOURCE_VENV}#${PERSIST_VENV}#g" "${activation_file}"
+      fi
+    done
   fi
 
   find "${WHEEL_DIR}" -maxdepth 2 -type f -name '*.whl' \
