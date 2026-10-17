@@ -10,7 +10,7 @@
 
 - 根目录负责项目级索引、公开边界和共享测评方法。
 - 语言模型路线的具体主线与框架选择见 [llm/README.md](llm/README.md)。
-- Qwen3.8-Flash-Next 的 llama.cpp/GGUF 部署步骤、异常处理和实验待办见 [llama.cpp.md](llm/qwen3.8-flash-next/llama.cpp.md)；vLLM 与 SGLang 使用各自的后端文档。
+- Qwen3.8-Flash-Next 的 UD-Q4_K_XL GGUF / llama.cpp 部署步骤、异常处理和实验待办见 [llama.cpp.md](llm/qwen3.8-flash-next/llama.cpp.md)；原生 FP8 Safetensors / vLLM 的构建与启动记录见 [vllm.md](llm/qwen3.8-flash-next/vllm.md)，SGLang 使用独立的后端文档。
 - 统一测评器只连接已启动的 OpenAI-compatible 服务，配置、脚本和结果之间的关系见 [benchmarks/README.md](benchmarks/README.md)。
 
 ## 仓库结构
@@ -49,6 +49,7 @@ multimodal-deploy/
 | 模态 | 模型 / 路线 | 任务 | 状态 | 运行环境 | 记录 |
 |---|---|---|---|---|---|
 | 语言 | Qwen3.8-Flash-Next / UD-Q4_K_XL | 文本 LLM 推理与服务 | llama.cpp E1–E4 已完成 | ModelScope AMD MI300X 192GB | [llama.cpp](llm/qwen3.8-flash-next/llama.cpp.md) |
+| 语言 | Qwen3.8-Flash-Next / FP8 Safetensors | 文本 LLM 推理与服务 | vLLM 0.31.0+rocm723 源码构建完成；`--enforce-eager` 启动、健康检查和单请求通过；默认 V1 编译路径仍有动态形状错误 | AMD MI300X 192GB / ROCm 7.2.3 | [vLLM](llm/qwen3.8-flash-next/vllm.md) |
 | 视频 | Wan2.2-T2V-A14B | 文生视频 | 已跑通 | ModelScope AMD MI300X（ROCm） | [record](video/wan2.2-t2v-a14b/record.md) |
 | 视频 | Wan2.2-TI2V-5B | 文 / 图生视频 | 待开始 | ModelScope AMD MI300X（ROCm） | [record](video/wan2.2-ti2v-5b/record.md) |
 | 图片 / 视觉 | 待选模型 | 图像生成、视觉理解与微调 | 规划中 | 待定 | [vision](vision/README.md) |
