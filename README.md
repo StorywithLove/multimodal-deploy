@@ -78,7 +78,7 @@ multimodal-deploy/
 <tr>
 <td>视频</td>
 <td>Wan2.2-T2V-A14B</td>
-<td>文生视频</td>
+<td>T2V</td>
 <td>文生视频</td>
 <td>已跑通</td>
 <td>ModelScope AMD MI300X（ROCm）</td>
@@ -87,7 +87,7 @@ multimodal-deploy/
 <tr>
 <td>视频</td>
 <td>Wan2.2-TI2V-5B</td>
-<td>文 / 图生视频</td>
+<td>TI2V</td>
 <td>文 / 图生视频</td>
 <td>待开始</td>
 <td>ModelScope AMD MI300X（ROCm）</td>
@@ -96,7 +96,7 @@ multimodal-deploy/
 <tr>
 <td>图片 / 视觉</td>
 <td>待选模型</td>
-<td>图像生成、视觉理解与微调</td>
+<td>待选路线</td>
 <td>图像生成、视觉理解与微调</td>
 <td>规划中</td>
 <td>待定</td>
