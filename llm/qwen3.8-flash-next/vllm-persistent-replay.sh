@@ -6,24 +6,25 @@ set -euo pipefail
 
 MODE="${1:-persist}"
 ARTIFACT_ROOT="${ARTIFACT_ROOT:-/mnt/workspace/artifacts/qwen3.8-flash-next-vllm}"
-BUILD_ROOT="${BUILD_ROOT:-/root/tmp/qwen3.8-flash-next-vllm0310}"
 PERSIST_ROOT="${ARTIFACT_ROOT}/vllm0310-20261017"
-SOURCE_DIR="${BUILD_ROOT}/vllm-src-v0.31.0"
-SOURCE_VENV="${BUILD_ROOT}/.venv-vllm-0310-base2"
 PERSIST_VENV="${PERSIST_ROOT}/venv-vllm-0310"
-WHEEL_DIR="${BUILD_ROOT}/wheels"
 LOG_DIR="${ARTIFACT_ROOT}/logs"
 
 persist() {
-  test -x "${SOURCE_VENV}/bin/python"
-  test -d "${SOURCE_DIR}/.git"
+  : "${BUILD_ROOT:?For the one-time persist step, set BUILD_ROOT to the current temporary build directory}"
+  local source_dir="${BUILD_ROOT}/vllm-src-v0.31.0"
+  local source_venv="${BUILD_ROOT}/.venv-vllm-0310-base2"
+  local wheel_dir="${BUILD_ROOT}/wheels"
+
+  test -x "${source_venv}/bin/python"
+  test -d "${source_dir}/.git"
 
   mkdir -p "${PERSIST_ROOT}/wheels" "${PERSIST_ROOT}/source" \
     "${PERSIST_ROOT}/meta" "${PERSIST_VENV}" "${LOG_DIR}"
 
   # Copy the runnable Python environment, but never copy MODEL_DIR.
   if [[ ! -x "${PERSIST_VENV}/bin/python" ]]; then
-    cp -a "${SOURCE_VENV}/." "${PERSIST_VENV}/"
+    cp -a "${source_venv}/." "${PERSIST_VENV}/"
     # venv activation files record the original temporary path. Rewrite only
     # those path markers so future interactive shells point at the persistent
     # environment too; package files and model paths are untouched.
@@ -32,21 +33,21 @@ persist() {
       "${PERSIST_VENV}/bin/activate.csh" \
       "${PERSIST_VENV}/bin/activate.fish"; do
       if [[ -f "${activation_file}" ]]; then
-        sed -i "s#${SOURCE_VENV}#${PERSIST_VENV}#g" "${activation_file}"
+        sed -i "s#${source_venv}#${PERSIST_VENV}#g" "${activation_file}"
       fi
     done
   fi
 
-  find "${WHEEL_DIR}" -maxdepth 2 -type f -name '*.whl' \
+  find "${wheel_dir}" -maxdepth 2 -type f -name '*.whl' \
     -exec cp -n {} "${PERSIST_ROOT}/wheels/" \; 2>/dev/null || true
 
-  git -C "${SOURCE_DIR}" archive \
+  git -C "${source_dir}" archive \
     --format=tar.gz \
     --prefix=vllm-src-v0.31.0/ \
     HEAD > "${PERSIST_ROOT}/source/vllm-src-v0.31.0.tar.gz"
 
-  git -C "${SOURCE_DIR}" rev-parse HEAD > "${PERSIST_ROOT}/meta/vllm-commit.txt"
-  "${SOURCE_VENV}/bin/python" -m pip freeze \
+  git -C "${source_dir}" rev-parse HEAD > "${PERSIST_ROOT}/meta/vllm-commit.txt"
+  "${source_venv}/bin/python" -m pip freeze \
     > "${PERSIST_ROOT}/meta/pip-freeze.txt"
   sha256sum "${PERSIST_ROOT}"/wheels/*.whl \
     > "${PERSIST_ROOT}/meta/wheels.sha256" 2>/dev/null || true
