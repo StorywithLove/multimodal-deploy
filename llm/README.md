@@ -36,7 +36,8 @@ GGUF Q4 与原生 BF16、FP8 等权重格式不能被表述为“纯框架胜负
 | 模型 | 任务 | 后端 / 格式 | 状态 | 运行环境 | 记录 |
 |---|---|---|---|---|---|
 | Qwen3.8-Flash-Next / UD-Q4_K_XL + UD-Q5_K_XL | 文本 LLM 推理与服务 | llama.cpp ROCm / GGUF | E1–E4 已完成 | AMD MI300X 192GB | [llama.cpp](qwen3.8-flash-next/llama.cpp.md) |
-| Qwen3.8-Flash-Next / FP8 | 文本 LLM 推理与服务 | vLLM / Safetensors FP8 | 源码构建完成；启动预检超时；Docker daemon 不可用；AMD 兼容性待处理 | AMD MI300X 192GB | [vLLM](qwen3.8-flash-next/vllm.md) |
+| Qwen3.8-Flash-Next / FP8 | 文本 LLM 推理与服务 | vLLM / Safetensors FP8 | v0.31.0 源码构建完成；`--enforce-eager` 启动、健康检查和单请求通过；默认 V1 编译路径仍有动态形状错误 | AMD MI300X 192GB | [vLLM](qwen3.8-flash-next/vllm.md) |
 | Qwen3.8-Flash-Next / FP8 | 文本 LLM 推理与服务 | SGLang / Safetensors FP8 | 待 MI300X 启动预检 | AMD MI300X 192GB | [SGLang](qwen3.8-flash-next/sglang.md) |
 
 后续顺序：先完成该 GGUF 路线的 E1–E4，再用同一官方 FP8 Safetensors 权重分别做 vLLM 与 SGLang 的单请求预检；只有 E1 参数和启动结果稳定后，才扩展到 E2/E3。
+
