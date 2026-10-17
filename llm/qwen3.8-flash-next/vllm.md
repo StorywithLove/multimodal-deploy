@@ -169,6 +169,7 @@ curl -fsS http://127.0.0.1:8000/v1/chat/completions \
 
 ```bash
 # 当前实例仍保留 /root/tmp 构建物时执行一次
+export BUILD_ROOT=/root/tmp/qwen3.8-flash-next-vllm0310
 bash llm/qwen3.8-flash-next/vllm-persistent-replay.sh persist
 
 # 后续从持久目录启动；只需要把 MODEL_DIR 指向当前实例的模型目录
@@ -177,6 +178,7 @@ bash llm/qwen3.8-flash-next/vllm-persistent-replay.sh replay
 ```
 
 `replay` 使用 `/mnt/workspace/artifacts/qwen3.8-flash-next-vllm/vllm0310-20261017/venv-vllm-0310` 中的 Python 和 vLLM，不依赖 `/root/tmp` 中的 vLLM 源码或虚拟环境；`MODEL_DIR` 是唯一保留在临时空间的模型路径。
+脚本不会为 `replay` 设置或读取 `BUILD_ROOT`；该变量只在第一次 `persist` 时指向当前临时构建目录。
 
 ### 下一步：持久目录无 eager 对照
 
