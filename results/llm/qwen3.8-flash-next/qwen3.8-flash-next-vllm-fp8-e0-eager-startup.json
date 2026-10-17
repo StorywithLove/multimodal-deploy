@@ -1,0 +1,48 @@
+{
+  "model": "Qwen3.8-Flash-Next",
+  "backend": "vLLM",
+  "weight_format": "FP8 Safetensors",
+  "experiment": "startup-precheck",
+  "date": "2026-10-17",
+  "status": "success",
+  "startup_mode": "enforce-eager",
+  "environment": {
+    "gpu": "AMD MI300X 192GB",
+    "rocm": "7.2.3",
+    "arch": "gfx942",
+    "vllm": "0.31.0+rocm723",
+    "torch": "2.12.0+git6bbd260",
+    "torch_hip": "7.2.53211",
+    "triton": "3.7.1",
+    "docker_daemon": "unavailable"
+  },
+  "command_parameters": {
+    "tensor_parallel_size": 1,
+    "dtype": "auto",
+    "gpu_memory_utilization": 0.92,
+    "cpu_offload_gb": 8,
+    "max_model_len": 1024,
+    "max_num_seqs": 1,
+    "enforce_eager": true,
+    "engine_ready_timeout_s": 1200
+  },
+  "observations": [
+    "AMD Qwen4ExpPLEFp8EmbeddingMethod initialized successfully.",
+    "FP8 weights used weight_dtype=torch.float8_e4m3fn with pinned CPU loading.",
+    "All 131 Safetensors checkpoint shards passed the weight-loading stage.",
+    "Application startup completed and /health returned HTTP 200.",
+    "/v1/models returned qwen3.8-flash-next-fp8.",
+    "A deterministic single chat request returned finish_reason=stop with HTTP success."
+  ],
+  "smoke_request": {
+    "max_tokens": 64,
+    "temperature": 0,
+    "prompt": "请用一句话说明什么是量化模型。",
+    "finish_reason": "stop",
+    "prompt_tokens": 59,
+    "completion_tokens": 52,
+    "total_tokens": 111
+  },
+  "known_limitation": "The same vLLM 0.31.0 environment without --enforce-eager reaches the model loading stage but fails in Torch Dynamo dynamic-shape compilation at query_start_loc.size()[0]. This eager result is a functional baseline, not a final performance baseline."
+}
+
