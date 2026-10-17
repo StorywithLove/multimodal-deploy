@@ -21,10 +21,13 @@ GGUF Q4 与原生 BF16、FP8 等权重格式不能被表述为“纯框架胜负
 
 ## 目录约定
 
-`<model-name>/` 下的 `record.md` 分为两部分：
+`<model-name>/` 下按推理后端分开记录部署文档；共同的测试契约仍放在仓库根目录：
 
-1. **模型部署 / Deployment**：必要环境、关键命令、异常与已验证的接口；
-2. **实验测评 / Evaluation**：实验假设、待办、引用的统一配置和结果结论。
+- `llama.cpp.md`：本模型的 `llama.cpp + GGUF` 路线与 E1–E4 结果；
+- `vllm.md`：本模型的 `vLLM + FP8 Safetensors` 路线；
+- `sglang.md`：本模型的 `SGLang + FP8 Safetensors` 路线。
+
+三份文档共享硬件和基准方法，但每份文档都必须在开头写明后端、权重格式、精度和模型目录，避免把 GGUF Q4/Q5 与原生 FP8 误当成同一权重的框架对照。
 
 性能压测不在每个文档里重新实现。所有支持 OpenAI-compatible API 的后端共用仓库根目录的 `benchmarks/openai_server_matrix.py` 与 `configs/benchmark/`；结构化结果保存到 `results/`。
 
@@ -32,6 +35,8 @@ GGUF Q4 与原生 BF16、FP8 等权重格式不能被表述为“纯框架胜负
 
 | 模型 | 任务 | 后端 / 格式 | 状态 | 运行环境 | 记录 |
 |---|---|---|---|---|---|
-| Qwen3.8-Flash-Next / UD-Q4_K_XL | 文本 LLM 推理与服务 | llama.cpp ROCm / GGUF Q4 | CLI、API、Web UI 已验证；E1–E4 待测 | ModelScope AMD MI300X 192GB | [record](qwen3.8-flash-next/record.md) |
+| Qwen3.8-Flash-Next / UD-Q4_K_XL + UD-Q5_K_XL | 文本 LLM 推理与服务 | llama.cpp ROCm / GGUF | E1–E4 已完成 | AMD MI300X 192GB | [llama.cpp](qwen3.8-flash-next/llama.cpp.md) |
+| Qwen3.8-Flash-Next / FP8 | 文本 LLM 推理与服务 | vLLM / Safetensors FP8 | 源码构建完成；启动预检超时；Docker daemon 不可用；AMD 兼容性待处理 | AMD MI300X 192GB | [vLLM](qwen3.8-flash-next/vllm.md) |
+| Qwen3.8-Flash-Next / FP8 | 文本 LLM 推理与服务 | SGLang / Safetensors FP8 | 待 MI300X 启动预检 | AMD MI300X 192GB | [SGLang](qwen3.8-flash-next/sglang.md) |
 
-后续顺序：先完成该 GGUF 路线的 E1–E4，再准备可比的原生权重路径接入 vLLM；当连续批处理、前缀缓存或更高并发成为瓶颈时，引入 SGLang。
+后续顺序：先完成该 GGUF 路线的 E1–E4，再用同一官方 FP8 Safetensors 权重分别做 vLLM 与 SGLang 的单请求预检；只有 E1 参数和启动结果稳定后，才扩展到 E2/E3。

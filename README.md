@@ -10,7 +10,7 @@
 
 - 根目录负责项目级索引、公开边界和共享测评方法。
 - 语言模型路线的具体主线与框架选择见 [llm/README.md](llm/README.md)。
-- 单个模型的部署步骤、异常处理和实验待办见对应的 [record.md](llm/qwen3.8-flash-next/record.md)。
+- Qwen3.8-Flash-Next 的 llama.cpp/GGUF 部署步骤、异常处理和实验待办见 [llama.cpp.md](llm/qwen3.8-flash-next/llama.cpp.md)；vLLM 与 SGLang 使用各自的后端文档。
 - 统一测评器只连接已启动的 OpenAI-compatible 服务，配置、脚本和结果之间的关系见 [benchmarks/README.md](benchmarks/README.md)。
 
 ## 仓库结构
@@ -19,7 +19,9 @@
 multimodal-deploy/
 ├─ llm/                         # 语言模型的部署记录与结论
 │  └─ qwen3.8-flash-next/
-│     └─ record.md               # 部署模块 + 实验测评模块
+│     ├─ llama.cpp.md            # llama.cpp + GGUF 部署与实验
+│     ├─ vllm.md                 # vLLM + FP8 Safetensors
+│     └─ sglang.md               # SGLang + FP8 Safetensors
 ├─ vision/                       # 图片模型路线
 ├─ video/                        # 视频模型路线与既有产出
 ├─ benchmarks/
@@ -35,7 +37,7 @@ multimodal-deploy/
 
 | 位置 | 回答的问题 | 产物 |
 |---|---|---|
-| 每个模型的 `record.md` | 如何部署、改了什么、为什么这样选、结果意味着什么 | 简洁操作路径、异常处理、结论 |
+| 每个后端的部署文档 | 如何部署、改了什么、为什么这样选、结果意味着什么 | 简洁操作路径、异常处理、结论 |
 | `configs/benchmark/` | 什么算作一次可比的负载 | 上下文、并发、输出长度、请求数 |
 | `benchmarks/` | 如何一致地测量 | 通用 OpenAI-compatible 客户端与采样逻辑 |
 | `results/` | 实际发生了什么 | 带环境与聚合指标的 JSON 结果 |
@@ -46,7 +48,7 @@ multimodal-deploy/
 
 | 模态 | 模型 / 路线 | 任务 | 状态 | 运行环境 | 记录 |
 |---|---|---|---|---|---|
-| 语言 | Qwen3.8-Flash-Next / UD-Q4_K_XL | 文本 LLM 推理与服务 | API / Web UI 已验证；基准待测 | ModelScope AMD MI300X 192GB | [record](llm/qwen3.8-flash-next/record.md) |
+| 语言 | Qwen3.8-Flash-Next / UD-Q4_K_XL | 文本 LLM 推理与服务 | llama.cpp E1–E4 已完成 | ModelScope AMD MI300X 192GB | [llama.cpp](llm/qwen3.8-flash-next/llama.cpp.md) |
 | 视频 | Wan2.2-T2V-A14B | 文生视频 | 已跑通 | ModelScope AMD MI300X（ROCm） | [record](video/wan2.2-t2v-a14b/record.md) |
 | 视频 | Wan2.2-TI2V-5B | 文 / 图生视频 | 待开始 | ModelScope AMD MI300X（ROCm） | [record](video/wan2.2-ti2v-5b/record.md) |
 | 图片 / 视觉 | 待选模型 | 图像生成、视觉理解与微调 | 规划中 | 待定 | [vision](vision/README.md) |

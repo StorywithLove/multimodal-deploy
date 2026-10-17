@@ -2,7 +2,7 @@
 
 `openai_server_matrix.py` is a client-side benchmark for an already running OpenAI-compatible chat endpoint. It does not download models or start / stop servers. That keeps server lifecycle and workload measurement separate.
 
-The same client is used for llama.cpp, vLLM and SGLang. The backend-specific command is recorded in the model's `record.md`; the workload contract is [mi300x-serving-matrix.json](../configs/benchmark/mi300x-serving-matrix.json).
+The same client is used for llama.cpp, vLLM and SGLang. The backend-specific command is recorded in the model's backend document (for example, `llama.cpp.md`, `vllm.md` or `sglang.md`); the workload contract is [mi300x-serving-matrix.json](../configs/benchmark/mi300x-serving-matrix.json).
 
 ## Dry run
 
@@ -15,8 +15,10 @@ python benchmarks/openai_server_matrix.py --config configs/benchmark/mi300x-serv
 Run this while `llama-server` is already listening:
 
 ```powershell
-python benchmarks/openai_server_matrix.py --config configs/benchmark/mi300x-serving-matrix.json --endpoint http://127.0.0.1:8000/v1/chat/completions --label qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1 --contexts 512,4096,8192 --concurrencies 1 --output results/qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1.json
+python benchmarks/openai_server_matrix.py --config configs/benchmark/mi300x-serving-matrix.json --endpoint http://127.0.0.1:8000/v1/chat/completions --label qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1 --contexts 512,4096,8192 --concurrencies 1 --output results/llm/qwen3.8-flash-next/qwen3.8-flash-next-llamacpp-e1-raw.json
 ```
+
+该命令生成单次原始测量；复核后将其归档到 `qwen3.8-flash-next-llamacpp-e1.json`，不要把原始输出直接覆盖归档 bundle。
 
 The script obtains a model ID from `/v1/models` when `--model` is omitted. Use `--model` when a server exposes multiple model aliases.
 
@@ -32,7 +34,7 @@ For `localhost`, `127.0.0.1`, and `::1` endpoints, the client bypasses inherited
 
 ROCm-SMI may encode VRAM counters as numeric strings; the sampler accepts both strings and numeric JSON values. If a configured GPU command yields no recognized counter, the result records an explicit sampling error instead of silently reporting zero samples.
 
-`record.md` is the interpretation layer: it explains server flags, anomalies and conclusions, and links to the JSON. The script is the measuring instrument; the JSON is the evidence.
+The backend deployment document is the interpretation layer: it explains server flags, anomalies and conclusions, and links to the JSON. The script is the measuring instrument; the JSON is the evidence.
 
 ## Fixed quality probe
 
@@ -48,7 +50,9 @@ python benchmarks/openai_quality_probe.py \
   --label qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e4-quality \
   --max-tokens 512 \
   --temperature 0 \
-  --output results/qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e4-quality.json
+  --output results/llm/qwen3.8-flash-next/qwen3.8-flash-next-llamacpp-e4-quality-raw.json
 ```
 
 Run the same command again against Q5 after restarting the server and change only `--label` and `--output`. The script returns exit code `2` if any question fails, while still preserving the partial JSON for diagnosis. The observed output-token rate includes request overhead; when llama.cpp returns `timings.predicted_per_second`, that server-side value is preserved separately.
+
+For the Qwen3.8-Flash-Next E4 follow-up on a Linux instance, `MAX_TOKENS=4096 bash benchmarks/run_qwen_e4_quality.sh` runs the Q4 and Q5 quality probes with the same `temperature=0` and `max_tokens=4096`, writes temporary per-quantization JSON plus server logs, and stops only the services it starts. After review, merge the JSON payloads into the model's `qwen3.8-flash-next-llamacpp-e4-quality.json` archive.

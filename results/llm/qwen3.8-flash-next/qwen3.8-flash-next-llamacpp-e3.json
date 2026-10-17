@@ -1,0 +1,684 @@
+{
+    "schema_version":  "llm-archive-bundle/v1",
+    "experiment":  "E3",
+    "backend":  "llama.cpp",
+    "model":  "Qwen3.8-Flash-Next",
+    "archive_note":  "Original JSON payloads are preserved under runs[].result; source_file records the pre-merge filename.",
+    "runs":  [
+                 {
+                     "run_id":  "base",
+                     "quantization":  "UD-Q4_K_XL",
+                     "source_file":  "qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e3.json",
+                     "result":  {
+                                    "schema_version":  1,
+                                    "script_version":  "0.2.2",
+                                    "created_at_utc":  "2026-10-16T09:15:02.838652+00:00",
+                                    "label":  "qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e3",
+                                    "endpoint":  "http://127.0.0.1:8000/v1/chat/completions",
+                                    "model":  "unsloth/Qwen3.8-Flash-Next-GGUF / UD-Q4_K_XL (GGUF)",
+                                    "host":  {
+                                                 "hostname":  "redacted-modelscope-amd-mi300x",
+                                                 "platform":  "Linux-5.10.134-008.14.kangaroo.al8.x86_64-x86_64-with-glibc2.35",
+                                                 "python":  "3.12.13"
+                                             },
+                                    "config_file":  "configs/benchmark/mi300x-serving-matrix.json",
+                                    "workload":  {
+                                                     "label":  "qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e3",
+                                                     "contexts":  [
+                                                                      8192,
+                                                                      32768,
+                                                                      65536
+                                                                  ],
+                                                     "concurrencies":  [
+                                                                           1
+                                                                       ],
+                                                     "max_tokens":  256,
+                                                     "requests_per_cell":  8,
+                                                     "warmup_requests":  1,
+                                                     "temperature":  0.0,
+                                                     "ttft_probe":  true,
+                                                     "gpu_sampling":  true,
+                                                     "cells":  3
+                                                 },
+                                    "cells":  [
+                                                  {
+                                                      "requests":  8,
+                                                      "completed":  8,
+                                                      "failed":  0,
+                                                      "failure_rate":  0.0,
+                                                      "wall_time_s":  54.194274,
+                                                      "throughput":  {
+                                                                         "requests_per_s":  0.147617,
+                                                                         "prompt_tokens_per_s":  812.927212,
+                                                                         "completion_tokens_per_s":  37.78997
+                                                                     },
+                                                      "latency_s":  {
+                                                                        "p50":  6.756625,
+                                                                        "p95":  6.780129
+                                                                    },
+                                                      "actual_tokens":  {
+                                                                            "prompt_total":  44056,
+                                                                            "completion_total":  2048
+                                                                        },
+                                                      "ttft_probe":  {
+                                                                         "ok":  true,
+                                                                         "first_event_s":  0.08894418899944867,
+                                                                         "ttft_s":  0.08897066500139772
+                                                                     },
+                                                      "gpu":  {
+                                                                  "command":  "rocm-smi --showmeminfo vram --json",
+                                                                  "samples":  95,
+                                                                  "baseline_gib":  79.2392,
+                                                                  "peak_gib":  79.2618,
+                                                                  "delta_gib":  0.0226
+                                                              },
+                                                      "per_request":  [
+                                                                          {
+                                                                              "request_id":  0,
+                                                                              "target_context":  8192,
+                                                                              "started_at_utc":  "2026-10-16T09:11:07.387649+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  5507,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  6.789875
+                                                                          },
+                                                                          {
+                                                                              "request_id":  1,
+                                                                              "target_context":  8192,
+                                                                              "started_at_utc":  "2026-10-16T09:11:14.177555+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  5507,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  6.762029
+                                                                          },
+                                                                          {
+                                                                              "request_id":  2,
+                                                                              "target_context":  8192,
+                                                                              "started_at_utc":  "2026-10-16T09:11:20.939613+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  5507,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  6.728881
+                                                                          },
+                                                                          {
+                                                                              "request_id":  3,
+                                                                              "target_context":  8192,
+                                                                              "started_at_utc":  "2026-10-16T09:11:27.668520+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  5507,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  6.756862
+                                                                          },
+                                                                          {
+                                                                              "request_id":  4,
+                                                                              "target_context":  8192,
+                                                                              "started_at_utc":  "2026-10-16T09:11:34.425407+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  5507,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  6.756388
+                                                                          },
+                                                                          {
+                                                                              "request_id":  5,
+                                                                              "target_context":  8192,
+                                                                              "started_at_utc":  "2026-10-16T09:11:41.181827+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  5507,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  6.727833
+                                                                          },
+                                                                          {
+                                                                              "request_id":  6,
+                                                                              "target_context":  8192,
+                                                                              "started_at_utc":  "2026-10-16T09:11:47.909683+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  5507,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  6.730775
+                                                                          },
+                                                                          {
+                                                                              "request_id":  7,
+                                                                              "target_context":  8192,
+                                                                              "started_at_utc":  "2026-10-16T09:11:54.640488+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  5507,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  6.760716
+                                                                          }
+                                                                      ],
+                                                      "target_context":  8192,
+                                                      "concurrency":  1
+                                                  },
+                                                  {
+                                                      "requests":  8,
+                                                      "completed":  8,
+                                                      "failed":  0,
+                                                      "failure_rate":  0.0,
+                                                      "wall_time_s":  56.813341,
+                                                      "throughput":  {
+                                                                         "requests_per_s":  0.140812,
+                                                                         "prompt_tokens_per_s":  3061.252798,
+                                                                         "completion_tokens_per_s":  36.047871
+                                                                     },
+                                                      "latency_s":  {
+                                                                        "p50":  7.079165,
+                                                                        "p95":  7.091458
+                                                                    },
+                                                      "actual_tokens":  {
+                                                                            "prompt_total":  173920,
+                                                                            "completion_total":  2048
+                                                                        },
+                                                      "ttft_probe":  {
+                                                                         "ok":  true,
+                                                                         "first_event_s":  0.12296164600047632,
+                                                                         "ttft_s":  0.12298533399734879
+                                                                     },
+                                                      "gpu":  {
+                                                                  "command":  "rocm-smi --showmeminfo vram --json",
+                                                                  "samples":  100,
+                                                                  "baseline_gib":  79.2393,
+                                                                  "peak_gib":  79.2618,
+                                                                  "delta_gib":  0.0225
+                                                              },
+                                                      "per_request":  [
+                                                                          {
+                                                                              "request_id":  0,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:12:27.520878+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.077384
+                                                                          },
+                                                                          {
+                                                                              "request_id":  1,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:12:34.598301+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.091991
+                                                                          },
+                                                                          {
+                                                                              "request_id":  2,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:12:41.690315+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.049743
+                                                                          },
+                                                                          {
+                                                                              "request_id":  3,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:12:48.740082+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.053108
+                                                                          },
+                                                                          {
+                                                                              "request_id":  4,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:12:55.793230+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.086386
+                                                                          },
+                                                                          {
+                                                                              "request_id":  5,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:13:02.879638+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.074387
+                                                                          },
+                                                                          {
+                                                                              "request_id":  6,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:13:09.954053+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.080946
+                                                                          },
+                                                                          {
+                                                                              "request_id":  7,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:13:17.035024+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.090468
+                                                                          }
+                                                                      ],
+                                                      "target_context":  32768,
+                                                      "concurrency":  1
+                                                  },
+                                                  {
+                                                      "requests":  8,
+                                                      "completed":  8,
+                                                      "failed":  0,
+                                                      "failure_rate":  0.0,
+                                                      "wall_time_s":  60.368549,
+                                                      "throughput":  {
+                                                                         "requests_per_s":  0.132519,
+                                                                         "prompt_tokens_per_s":  5749.351342,
+                                                                         "completion_tokens_per_s":  33.92495
+                                                                     },
+                                                      "latency_s":  {
+                                                                        "p50":  7.513149,
+                                                                        "p95":  7.526891
+                                                                    },
+                                                      "actual_tokens":  {
+                                                                            "prompt_total":  347080,
+                                                                            "completion_total":  2048
+                                                                        },
+                                                      "ttft_probe":  {
+                                                                         "ok":  true,
+                                                                         "first_event_s":  0.18622605500058853,
+                                                                         "ttft_s":  0.18625033699936466
+                                                                     },
+                                                      "gpu":  {
+                                                                  "command":  "rocm-smi --showmeminfo vram --json",
+                                                                  "samples":  106,
+                                                                  "baseline_gib":  79.2393,
+                                                                  "peak_gib":  79.2618,
+                                                                  "delta_gib":  0.0225
+                                                              },
+                                                      "per_request":  [
+                                                                          {
+                                                                              "request_id":  0,
+                                                                              "target_context":  65536,
+                                                                              "started_at_utc":  "2026-10-16T09:14:02.623441+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  43385,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.524143
+                                                                          },
+                                                                          {
+                                                                              "request_id":  1,
+                                                                              "target_context":  65536,
+                                                                              "started_at_utc":  "2026-10-16T09:14:10.147605+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  43385,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.510367
+                                                                          },
+                                                                          {
+                                                                              "request_id":  2,
+                                                                              "target_context":  65536,
+                                                                              "started_at_utc":  "2026-10-16T09:14:17.657998+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  43385,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.510869
+                                                                          },
+                                                                          {
+                                                                              "request_id":  3,
+                                                                              "target_context":  65536,
+                                                                              "started_at_utc":  "2026-10-16T09:14:25.168890+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  43385,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.490904
+                                                                          },
+                                                                          {
+                                                                              "request_id":  4,
+                                                                              "target_context":  65536,
+                                                                              "started_at_utc":  "2026-10-16T09:14:32.659825+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  43385,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.516112
+                                                                          },
+                                                                          {
+                                                                              "request_id":  5,
+                                                                              "target_context":  65536,
+                                                                              "started_at_utc":  "2026-10-16T09:14:40.175964+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  43385,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.52837
+                                                                          },
+                                                                          {
+                                                                              "request_id":  6,
+                                                                              "target_context":  65536,
+                                                                              "started_at_utc":  "2026-10-16T09:14:47.704358+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  43385,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.491851
+                                                                          },
+                                                                          {
+                                                                              "request_id":  7,
+                                                                              "target_context":  65536,
+                                                                              "started_at_utc":  "2026-10-16T09:14:55.196232+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  43385,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.51543
+                                                                          }
+                                                                      ],
+                                                      "target_context":  65536,
+                                                      "concurrency":  1
+                                                  }
+                                              ],
+                                    "publication":  {
+                                                        "sanitized":  true,
+                                                        "redacted_fields":  [
+                                                                                "host.hostname",
+                                                                                "host.pid",
+                                                                                "absolute model path",
+                                                                                "absolute config path"
+                                                                            ]
+                                                    }
+                                }
+                 },
+                 {
+                     "run_id":  "followup-32768-c1-c4",
+                     "quantization":  "UD-Q4_K_XL",
+                     "source_file":  "qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e3-32768-c1-c4.json",
+                     "result":  {
+                                    "schema_version":  1,
+                                    "script_version":  "0.2.2",
+                                    "created_at_utc":  "2026-10-16T09:33:43.246607+00:00",
+                                    "label":  "qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e3-32768-c1-c4",
+                                    "endpoint":  "http://127.0.0.1:8000/v1/chat/completions",
+                                    "model":  "unsloth/Qwen3.8-Flash-Next-GGUF / UD-Q4_K_XL (GGUF)",
+                                    "host":  {
+                                                 "hostname":  "redacted-modelscope-amd-mi300x",
+                                                 "platform":  "Linux-5.10.134-008.14.kangaroo.al8.x86_64-x86_64-with-glibc2.35",
+                                                 "python":  "3.12.13"
+                                             },
+                                    "config_file":  "configs/benchmark/mi300x-serving-matrix.json",
+                                    "workload":  {
+                                                     "label":  "qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e3-32768-c1-c4",
+                                                     "contexts":  [
+                                                                      32768
+                                                                  ],
+                                                     "concurrencies":  [
+                                                                           1,
+                                                                           4
+                                                                       ],
+                                                     "max_tokens":  256,
+                                                     "requests_per_cell":  8,
+                                                     "warmup_requests":  1,
+                                                     "temperature":  0.0,
+                                                     "ttft_probe":  true,
+                                                     "gpu_sampling":  true,
+                                                     "cells":  2
+                                                 },
+                                    "cells":  [
+                                                  {
+                                                      "requests":  8,
+                                                      "completed":  8,
+                                                      "failed":  0,
+                                                      "failure_rate":  0.0,
+                                                      "wall_time_s":  56.794115,
+                                                      "throughput":  {
+                                                                         "requests_per_s":  0.14086,
+                                                                         "prompt_tokens_per_s":  3062.289128,
+                                                                         "completion_tokens_per_s":  36.060074
+                                                                     },
+                                                      "latency_s":  {
+                                                                        "p50":  7.067769,
+                                                                        "p95":  7.094617
+                                                                    },
+                                                      "actual_tokens":  {
+                                                                            "prompt_total":  173920,
+                                                                            "completion_total":  2048
+                                                                        },
+                                                      "ttft_probe":  {
+                                                                         "ok":  true,
+                                                                         "first_event_s":  0.1351843740012555,
+                                                                         "ttft_s":  0.1352138570000534
+                                                                     },
+                                                      "gpu":  {
+                                                                  "command":  "rocm-smi --showmeminfo vram --json",
+                                                                  "samples":  100,
+                                                                  "baseline_gib":  81.3721,
+                                                                  "peak_gib":  81.3946,
+                                                                  "delta_gib":  0.0225
+                                                              },
+                                                      "per_request":  [
+                                                                          {
+                                                                              "request_id":  0,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:30:58.137559+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.073444
+                                                                          },
+                                                                          {
+                                                                              "request_id":  1,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:31:05.211032+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.060006
+                                                                          },
+                                                                          {
+                                                                              "request_id":  2,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:31:12.271064+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.097932
+                                                                          },
+                                                                          {
+                                                                              "request_id":  3,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:31:19.369021+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.068265
+                                                                          },
+                                                                          {
+                                                                              "request_id":  4,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:31:26.437311+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.067273
+                                                                          },
+                                                                          {
+                                                                              "request_id":  5,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:31:33.504606+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.051408
+                                                                          },
+                                                                          {
+                                                                              "request_id":  6,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:31:40.556039+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.062488
+                                                                          },
+                                                                          {
+                                                                              "request_id":  7,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:31:47.618556+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  7.088461
+                                                                          }
+                                                                      ],
+                                                      "target_context":  32768,
+                                                      "concurrency":  1
+                                                  },
+                                                  {
+                                                      "requests":  8,
+                                                      "completed":  8,
+                                                      "failed":  0,
+                                                      "failure_rate":  0.0,
+                                                      "wall_time_s":  101.319208,
+                                                      "throughput":  {
+                                                                         "requests_per_s":  0.078958,
+                                                                         "prompt_tokens_per_s":  1716.555064,
+                                                                         "completion_tokens_per_s":  20.213344
+                                                                     },
+                                                      "latency_s":  {
+                                                                        "p50":  49.922184,
+                                                                        "p95":  89.115928
+                                                                    },
+                                                      "actual_tokens":  {
+                                                                            "prompt_total":  173920,
+                                                                            "completion_total":  2048
+                                                                        },
+                                                      "ttft_probe":  {
+                                                                         "ok":  true,
+                                                                         "first_event_s":  0.1234162760010804,
+                                                                         "ttft_s":  0.12344148999909521
+                                                                     },
+                                                      "gpu":  {
+                                                                  "command":  "rocm-smi --showmeminfo vram --json",
+                                                                  "samples":  176,
+                                                                  "baseline_gib":  81.3717,
+                                                                  "peak_gib":  81.3999,
+                                                                  "delta_gib":  0.0282
+                                                              },
+                                                      "per_request":  [
+                                                                          {
+                                                                              "request_id":  0,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:32:02.049566+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  87.346
+                                                                          },
+                                                                          {
+                                                                              "request_id":  1,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:32:02.050519+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  88.046468
+                                                                          },
+                                                                          {
+                                                                              "request_id":  2,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:32:02.051671+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  89.354409
+                                                                          },
+                                                                          {
+                                                                              "request_id":  3,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:32:02.053236+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  88.673035
+                                                                          },
+                                                                          {
+                                                                              "request_id":  4,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:33:29.395588+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  12.498368
+                                                                          },
+                                                                          {
+                                                                              "request_id":  5,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:33:30.097011+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  12.401249
+                                                                          },
+                                                                          {
+                                                                              "request_id":  6,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:33:30.726294+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  12.099124
+                                                                          },
+                                                                          {
+                                                                              "request_id":  7,
+                                                                              "target_context":  32768,
+                                                                              "started_at_utc":  "2026-10-16T09:33:31.406102+00:00",
+                                                                              "http_status":  200,
+                                                                              "ok":  true,
+                                                                              "prompt_tokens":  21740,
+                                                                              "completion_tokens":  256,
+                                                                              "latency_s":  11.757258
+                                                                          }
+                                                                      ],
+                                                      "target_context":  32768,
+                                                      "concurrency":  4
+                                                  }
+                                              ],
+                                    "publication":  {
+                                                        "sanitized":  true,
+                                                        "redacted_fields":  [
+                                                                                "host.hostname",
+                                                                                "host.pid",
+                                                                                "absolute model path",
+                                                                                "absolute config path"
+                                                                            ]
+                                                    }
+                                }
+                 }
+             ]
+}

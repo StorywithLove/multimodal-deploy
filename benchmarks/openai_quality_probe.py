@@ -24,7 +24,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 
-SCRIPT_VERSION = "0.1.0"
+SCRIPT_VERSION = "0.1.1"
 
 
 def utc_now() -> str:
@@ -248,6 +248,7 @@ def main() -> int:
             ),
             "server_generation_tokens_per_s": server_generation_tps,
             "response_text": extract_content(data) if isinstance(data, dict) else "",
+            "response_choices": data.get("choices", []),
             "timings": timings,
         }
         if not success and isinstance(data, dict) and data:
@@ -267,6 +268,11 @@ def main() -> int:
         if item["observed_output_tokens_per_s"] is not None
     ]
     summary = {
+        "empty_answer_count": sum(not item["response_text"].strip() for item in successful),
+        "length_finish_count": sum(
+            any(choice.get("finish_reason") == "length" for choice in item["response_choices"])
+            for item in successful
+        ),
         "question_count": len(results),
         "success_count": len(successful),
         "failure_count": len(results) - len(successful),
