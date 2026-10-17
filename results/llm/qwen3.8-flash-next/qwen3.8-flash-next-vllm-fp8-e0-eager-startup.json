@@ -41,7 +41,8 @@
     "finish_reason": "stop",
     "prompt_tokens": 59,
     "completion_tokens": 52,
-    "total_tokens": 111
+    "total_tokens": 111,
+    "response_format_note": "The smoke response included a visible </think> marker and a short meta preamble; record this as a chat-template/reasoning-format observation before quality comparison."
   },
   "known_limitation": "The same vLLM 0.31.0 environment without --enforce-eager reaches the model loading stage but fails in Torch Dynamo dynamic-shape compilation at query_start_loc.size()[0]. This eager result is a functional baseline, not a final performance baseline."
 }
