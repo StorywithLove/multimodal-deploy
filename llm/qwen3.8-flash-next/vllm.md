@@ -9,6 +9,33 @@
 - 持久目录：`/mnt/workspace/artifacts/qwen3.8-flash-next-vllm/vllm0310-20261017/`
 - 当前结果：[vLLM 0.31.0 eager 启动结果](../../results/llm/qwen3.8-flash-next/qwen3.8-flash-next-vllm-fp8-e0-eager-startup.json)
 
+## 模型下载
+
+模型文件约 173 GiB，下载到临时模型目录；不要复制到 vLLM 持久目录。当前实例优先使用 ModelScope：
+
+```bash
+export MODEL_ROOT=/root/tmp/qwen3.8-flash-next
+export MODEL_DIR="$MODEL_ROOT/Qwen3.8-Flash-Next-FP8"
+
+mkdir -p "$MODEL_ROOT"
+
+modelscope download \
+  --model Qwen/Qwen3.8-Flash-Next-FP8 \
+  --local_dir "$MODEL_DIR"
+```
+
+如果 ModelScope 链路不可用，再使用 Hugging Face 下载到同一个目录：
+
+```bash
+export MODEL_ROOT=/root/tmp/qwen3.8-flash-next
+export MODEL_DIR="$MODEL_ROOT/Qwen3.8-Flash-Next-FP8"
+
+mkdir -p "$MODEL_ROOT"
+
+hf download Qwen/Qwen3.8-Flash-Next-FP8 \
+  --local-dir "$MODEL_DIR"
+```
+
 ## 部署
 
 ### 遇到的 bug
