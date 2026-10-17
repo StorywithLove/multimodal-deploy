@@ -165,16 +165,20 @@ curl -fsS http://127.0.0.1:8000/v1/chat/completions \
 
 持久目录只保存 vLLM 运行所需的虚拟环境、vLLM wheel、源码归档、依赖清单、版本指纹和日志；不复制约 173 GiB 的 FP8 模型。模型仍由当前实例单独下载到临时模型目录，避免把模型文件重复写入工作区。
 
-仓库中的 [`vllm-persistent-replay.sh`](vllm-persistent-replay.sh) 提供两个动作：
+仓库中的 [`vllm-persistent-replay.sh`](vllm-persistent-replay.sh) 已同步到 AMD 实例的持久路径 `/mnt/workspace/artifacts/qwen3.8-flash-next-vllm/vllm-persistent-replay.sh`，提供 `persist`、`verify` 和 `replay` 三个动作：
 
 ```bash
 # 当前实例仍保留 /root/tmp 构建物时执行一次
 export BUILD_ROOT=/root/tmp/qwen3.8-flash-next-vllm0310
-bash llm/qwen3.8-flash-next/vllm-persistent-replay.sh persist
+export PERSIST_SCRIPT=/mnt/workspace/artifacts/qwen3.8-flash-next-vllm/vllm-persistent-replay.sh
+bash "$PERSIST_SCRIPT" persist
+
+# 检查环境是否真的已经迁移到持久目录
+bash "$PERSIST_SCRIPT" verify
 
 # 后续从持久目录启动；只需要把 MODEL_DIR 指向当前实例的模型目录
 export MODEL_DIR=/root/tmp/qwen3.8-flash-next/Qwen3.8-Flash-Next-FP8
-bash llm/qwen3.8-flash-next/vllm-persistent-replay.sh replay
+bash "$PERSIST_SCRIPT" replay
 ```
 
 `replay` 使用 `/mnt/workspace/artifacts/qwen3.8-flash-next-vllm/vllm0310-20261017/venv-vllm-0310` 中的 Python 和 vLLM，不依赖 `/root/tmp` 中的 vLLM 源码或虚拟环境；`MODEL_DIR` 是唯一保留在临时空间的模型路径。
