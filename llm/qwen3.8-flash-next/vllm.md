@@ -155,6 +155,8 @@ curl -fsS http://127.0.0.1:8000/v1/chat/completions \
 - `/health` 返回 HTTP 200，`/v1/models` 返回 `qwen3.8-flash-next-fp8`；
 - 单请求聊天冒烟返回 `finish_reason=stop`。
 
+冒烟响应中可见 `</think>` 标记和一小段元提示词式前缀；接口可用性已通过，但后续质量对照还要统一处理 reasoning/chat template 的可见性，不能只按 HTTP 200 判断输出质量。
+
 本轮使用 `--enforce-eager`。不带该参数时，模型同样能进入权重加载阶段，但随后在 Torch Dynamo 动态形状编译阶段失败，错误集中在 `query_start_loc.size()[0]` 的约束冲突。因此当前结论是：**vLLM 0.31.0 + AMD FP8 PLE 已具备功能可用性，默认 V1 编译路径仍需单独排障；eager 模式暂作为可复现基线。**
 
 成功结果见 [`qwen3.8-flash-next-vllm-fp8-e0-eager-startup.json`](../../results/llm/qwen3.8-flash-next/qwen3.8-flash-next-vllm-fp8-e0-eager-startup.json)。
