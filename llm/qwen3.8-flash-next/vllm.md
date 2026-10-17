@@ -165,24 +165,86 @@ curl -fsS http://127.0.0.1:8000/v1/chat/completions \
 
 持久目录只保存 vLLM 运行所需的虚拟环境、vLLM wheel、源码归档、依赖清单、版本指纹和日志；不复制约 173 GiB 的 FP8 模型。模型仍由当前实例单独下载到临时模型目录，避免把模型文件重复写入工作区。
 
-仓库中的 [`vllm-persistent-replay.sh`](vllm-persistent-replay.sh) 已同步到 AMD 实例的持久路径 `/mnt/workspace/artifacts/qwen3.8-flash-next-vllm/vllm-persistent-replay.sh`，提供 `persist`、`verify` 和 `replay` 三个动作：
+推荐直接复制一次虚拟环境，再用持久目录中的绝对 Python 路径启动。这样启动阶段不再依赖 `/root/tmp` 中的 vLLM 源码或虚拟环境；仓库中的 [`vllm-persistent-replay.sh`](vllm-persistent-replay.sh) 只作为可选自动化工具保留。
 
 ```bash
-# 当前实例仍保留 /root/tmp 构建物时执行一次
+# 只执行一次：当前实例仍保留 /root/tmp 构建物时
 export BUILD_ROOT=/root/tmp/qwen3.8-flash-next-vllm0310
-export PERSIST_SCRIPT=/mnt/workspace/artifacts/qwen3.8-flash-next-vllm/vllm-persistent-replay.sh
-bash "$PERSIST_SCRIPT" persist
+export ARTIFACT_ROOT=/mnt/workspace/artifacts/qwen3.8-flash-next-vllm
+export PERSIST_ROOT="$ARTIFACT_ROOT/vllm0310-20261017"
+export SOURCE_VENV="$BUILD_ROOT/.venv-vllm-0310-base2"
+export PERSIST_VENV="$PERSIST_ROOT/venv-vllm-0310"
 
-# 检查环境是否真的已经迁移到持久目录
-bash "$PERSIST_SCRIPT" verify
+test -x "$SOURCE_VENV/bin/python"
+mkdir -p "$PERSIST_ROOT/wheels" "$PERSIST_ROOT/source" "$PERSIST_ROOT/meta"
 
-# 后续从持久目录启动；只需要把 MODEL_DIR 指向当前实例的模型目录
-export MODEL_DIR=/root/tmp/qwen3.8-flash-next/Qwen3.8-Flash-Next-FP8
-bash "$PERSIST_SCRIPT" replay
+if [ ! -x "$PERSIST_VENV/bin/python" ]; then
+  mkdir -p "$PERSIST_VENV"
+  cp -a "$SOURCE_VENV/." "$PERSIST_VENV/"
+  for f in "$PERSIST_VENV/bin/activate" \
+           "$PERSIST_VENV/bin/activate.csh" \
+           "$PERSIST_VENV/bin/activate.fish"; do
+    [ -f "$f" ] && sed -i "s#$SOURCE_VENV#$PERSIST_VENV#g" "$f"
+  done
+fi
+
+# 保存可重装的 wheel、源码快照和版本指纹；不复制模型。
+find "$BUILD_ROOT/wheels" -maxdepth 2 -type f -name '*.whl' \
+  -exec cp -n {} "$PERSIST_ROOT/wheels/" \; 2>/dev/null || true
+git -C "$BUILD_ROOT/vllm-src-v0.31.0" archive \
+  --format=tar.gz --prefix=vllm-src-v0.31.0/ HEAD \
+  > "$PERSIST_ROOT/source/vllm-src-v0.31.0.tar.gz"
+git -C "$BUILD_ROOT/vllm-src-v0.31.0" rev-parse HEAD \
+  > "$PERSIST_ROOT/meta/vllm-commit.txt"
+"$SOURCE_VENV/bin/python" -m pip freeze \
+  > "$PERSIST_ROOT/meta/pip-freeze.txt"
+
+# 验证运行时确实来自持久目录
+"$PERSIST_VENV/bin/python" - <<'PY'
+import sys, torch, triton, vllm
+print("python:", sys.executable)
+print("sys.prefix:", sys.prefix)
+print("vllm:", vllm.__version__)
+print("vllm path:", vllm.__file__)
+print("torch:", torch.__version__, torch.version.hip)
+print("triton:", triton.__version__)
+assert sys.prefix.startswith("/mnt/workspace/artifacts/")
+assert vllm.__file__.startswith(sys.prefix)
+PY
 ```
 
-`replay` 使用 `/mnt/workspace/artifacts/qwen3.8-flash-next-vllm/vllm0310-20261017/venv-vllm-0310` 中的 Python 和 vLLM，不依赖 `/root/tmp` 中的 vLLM 源码或虚拟环境；`MODEL_DIR` 是唯一保留在临时空间的模型路径。
-脚本不会为 `replay` 设置或读取 `BUILD_ROOT`；该变量只在第一次 `persist` 时指向当前临时构建目录。
+验证通过后，启动命令只使用持久目录中的 vLLM Python。模型仍不复制到持久目录，因此 `MODEL_DIR` 是唯一保留在临时空间的路径：
+
+```bash
+unset BUILD_ROOT SOURCE_VENV
+export ARTIFACT_ROOT=/mnt/workspace/artifacts/qwen3.8-flash-next-vllm
+export PERSIST_ROOT="$ARTIFACT_ROOT/vllm0310-20261017"
+export PERSIST_VENV="$PERSIST_ROOT/venv-vllm-0310"
+export VLLM_PY="$PERSIST_VENV/bin/python"
+export MODEL_DIR=/root/tmp/qwen3.8-flash-next/Qwen3.8-Flash-Next-FP8
+export LOG="$ARTIFACT_ROOT/logs/vllm0310-persistent-eager.log"
+
+export ROCM_HOME=/opt/rocm
+export ROCM_PATH=/opt/rocm
+export PATH="/opt/rocm/bin:/opt/rocm/llvm/bin:$PATH"
+export LD_LIBRARY_PATH="/opt/rocm/lib:${LD_LIBRARY_PATH:-}"
+export PYTORCH_ROCM_ARCH=gfx942
+export VLLM_ENGINE_READY_TIMEOUT_S=1200
+mkdir -p "$ARTIFACT_ROOT/logs"
+
+"$VLLM_PY" -m vllm.entrypoints.openai.api_server \
+  --model "$MODEL_DIR" \
+  --served-model-name qwen3.8-flash-next-fp8 \
+  --host 127.0.0.1 --port 8000 \
+  --tensor-parallel-size 1 \
+  --dtype auto \
+  --gpu-memory-utilization 0.92 \
+  --cpu-offload-gb 8 \
+  --max-model-len 1024 \
+  --max-num-seqs 1 \
+  --enforce-eager \
+  2>&1 | tee "$LOG"
+```
 
 ### 下一步：持久目录无 eager 对照
 
