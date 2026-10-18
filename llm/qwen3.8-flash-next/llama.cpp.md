@@ -121,12 +121,25 @@ curl -sS http://127.0.0.1:8000/v1/models
 
 - 工作负载契约：[mi300x-serving-matrix.json](../../configs/benchmark/mi300x-serving-matrix.json)：上下文目标、并发、输出上限、请求数和采样频率；
 - 测量工具：[openai_server_matrix.py](../../benchmarks/openai_server_matrix.py)：请求已启动的 OpenAI-compatible 服务，记录实际返回 token 用量、端到端延迟、吞吐、错误和 HBM 采样；
+- E4 质量探针：[openai_quality_probe.py](../../benchmarks/openai_quality_probe.py)，固定提示集：[MT-Bench Mini-8](../../benchmarks/quality/mtbench-mini-8.json)；启动 ready 探针：[server_startup_probe.py](../../benchmarks/server_startup_probe.py)；
 - 原始证据：[results/](../../results/)：每轮生成一个小型 JSON；
 - 本页：记录服务器启动参数、实验目的、异常、图表 / 结果链接与解释。
 
 换言之，`llama.cpp.md` 是本路线的实验笔记和结论，配置文件是“什么算公平负载”，脚本是量尺，JSON 是证据。后续 vLLM / SGLang 只要提供同样的 OpenAI-compatible endpoint，即可使用同一量尺；模型格式或精度不一致时，结果会明确标注为“部署路线比较”，不伪装成纯框架对比。
 
 基准器验证：已在 AMD MI300X 实例完成 dry-run；配置成功展开为 12 个测试单元（上下文 512/4096/8192 × 并发 1/2/4/8）。E1 已完成单并发正式测量。
+
+在新终端复测前，先设置模型和服务路径；后续代码块中的 `$SERVER`、`$MODEL_FILE`、`$Q4` 和 `$Q5` 均使用这些值：
+
+```bash
+export WORK=/root/tmp/qwen3.8-flash-next
+export MODEL_DIR="$WORK/Qwen3.8-Flash-Next-GGUF"
+export SERVER="$WORK/llama.cpp/build/bin/llama-server"
+export Q4="$(find "$MODEL_DIR" -type f -name '*UD-Q4_K_XL*00001*.gguf' -print -quit)"
+export Q5="$(find "$MODEL_DIR" -type f -name '*UD-Q5_K_XL*00001*.gguf' -print -quit)"
+export MODEL_FILE="$Q4"
+test -x "$SERVER" && test -f "$Q4" && test -f "$Q5"
+```
 
 ### E1 — 单请求基线
 
@@ -147,9 +160,9 @@ curl -sS http://127.0.0.1:8000/v1/models
   --host 127.0.0.1 --port 8000
 
 # 终端 B：确认服务后生成正式 E1 证据文件。
-cd /mnt/workspace
+cd /mnt/workspace/multimodal-deploy
 curl -fsS http://127.0.0.1:8000/health && echo
-python benchmarks/openai_server_matrix.py \
+python3 -u benchmarks/openai_server_matrix.py \
   --config configs/benchmark/mi300x-serving-matrix.json \
   --endpoint http://127.0.0.1:8000/v1/chat/completions \
   --label qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1 \
@@ -181,6 +194,27 @@ python benchmarks/openai_server_matrix.py \
 
 E2 结果：12 个测试单元（3 个目标上下文 × 4 个客户端并发），共 96/96 请求成功，失败率 0%；脚本 v0.2.2，所有单元均有有效 HBM 采样。
 
+可复跑命令：先将 Q4 服务重启为 8 个 Slot（build 支持统一 KV 时优先使用第一条；否则使用容量等价的 fallback），再运行共享矩阵测量器。该客户端并发矩阵为 1/2/4/8，工作负载参数从统一配置读取。
+
+```bash
+# 终端 A：选择当前 build 支持的一种 8-Slot 配置后启动服务。
+"$SERVER" -m "$MODEL_FILE" -ngl 999 --parallel 8 \
+  --kv-unified-per-slot 10240 --jinja --host 127.0.0.1 --port 8000
+# 若不支持 --kv-unified-per-slot，则用：
+# "$SERVER" -m "$MODEL_FILE" -ngl 999 -c 81920 --parallel 8 \
+#   --jinja --host 127.0.0.1 --port 8000
+
+# 终端 B：确认服务健康后测量。
+cd /mnt/workspace/multimodal-deploy
+curl -fsS http://127.0.0.1:8000/health && echo
+python3 -u benchmarks/openai_server_matrix.py \
+  --config configs/benchmark/mi300x-serving-matrix.json \
+  --endpoint http://127.0.0.1:8000/v1/chat/completions \
+  --label qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e2 \
+  --contexts 512,4096,8192 --concurrencies 1,2,4,8 \
+  --output results/llm/qwen3.8-flash-next/reproductions/llamacpp-e2-context512-4096-8192-concurrency1-2-4-8-raw.json
+```
+
 | 客户端并发 | completion 吞吐（512 / 4096 / 8192，tok/s） | 各上下文 P95 最大值 | HBM 峰值范围 |
 |---:|---:|---:|---:|
 | 1 | 38.58 / 35.52 / 34.81 | 9.167 s | 80.392–80.414 GiB |
@@ -204,6 +238,25 @@ E2 结果：12 个测试单元（3 个目标上下文 × 4 个客户端并发）
 
 E3 结果：3 个目标上下文 × 单并发，共 24/24 请求成功，失败率 0%；脚本 v0.2.2，301 个 HBM 样本均有效。
 
+可复跑 E3 基线：服务使用单 Slot、65K 容量；客户端并发固定为 1。统一矩阵配置仍提供 8 请求/单元、1 个 warmup 和 HBM/TTFT 采样。
+
+```bash
+# 终端 A：支持统一 KV 的 build 使用 --kv-unified-per-slot 65536；
+# 否则将该选项替换为 -c 65536。
+"$SERVER" -m "$MODEL_FILE" -ngl 999 --parallel 1 \
+  --kv-unified-per-slot 65536 --jinja --host 127.0.0.1 --port 8000
+
+# 终端 B：
+cd /mnt/workspace/multimodal-deploy
+curl -fsS http://127.0.0.1:8000/health && echo
+python3 -u benchmarks/openai_server_matrix.py \
+  --config configs/benchmark/mi300x-serving-matrix.json \
+  --endpoint http://127.0.0.1:8000/v1/chat/completions \
+  --label qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e3 \
+  --contexts 8192,32768,65536 --concurrencies 1 \
+  --output results/llm/qwen3.8-flash-next/reproductions/llamacpp-e3-context8192-32768-65536-c1-raw.json
+```
+
 | 目标上下文 | 实际 Prompt | TTFT | P50 / P95 | completion 吞吐 | HBM 基线 → 峰值 |
 |---:|---:|---:|---:|---:|---:|
 | 8192 | 5,507 | 89.0 ms | 6.757 / 6.780 s | 37.790 tok/s | 79.239 → 79.262 GiB |
@@ -224,6 +277,24 @@ E3 补充实验：使用 Q4 模型、`--parallel 4`，build 支持 `--kv-unified
 与原 E3 的 32768 单并发基线（36.048 tok/s、P95 7.091 s）一致，说明补充实验的单并发结果稳定。并发 4 后，completion 吞吐降至 20.213 tok/s，P95 升至 89.116 s；在 32768 长上下文下，E2 短上下文中接近拐点的并发 4 不再适合作为高效服务档位。四 Slot 配置的 HBM 约 81.37–81.40 GiB，比单 Slot 基线约高 2.1 GiB，未出现 OOM。
 
 补充实验已合并进上面的 E3 归档文件，`runs` 中以 `followup-32768-c1-c4` 标识。
+
+32768/C1、C4 补充单元的复跑命令（服务端固定 4 个 Slot、每 Slot 32768 容量；若不支持统一 KV，用 `-c 131072` 替代）：
+
+```bash
+# 终端 A：
+"$SERVER" -m "$MODEL_FILE" -ngl 999 --parallel 4 \
+  --kv-unified-per-slot 32768 --jinja --host 127.0.0.1 --port 8000
+
+# 终端 B：
+cd /mnt/workspace/multimodal-deploy
+curl -fsS http://127.0.0.1:8000/health && echo
+python3 -u benchmarks/openai_server_matrix.py \
+  --config configs/benchmark/mi300x-serving-matrix.json \
+  --endpoint http://127.0.0.1:8000/v1/chat/completions \
+  --label qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e3-32768-c1-c4 \
+  --contexts 32768 --concurrencies 1,4 \
+  --output results/llm/qwen3.8-flash-next/reproductions/llamacpp-e3-context32768-c1-c4-raw.json
+```
 
 目的：分两步区分长上下文和并发的影响：先固定单槽/单请求，观察 8192、32768、65536 目标上下文的 Prefill、延迟和吞吐变化；再固定 32768 上下文，比较客户端并发 1 与 4。结果显示实际 Prompt 从 5,507 增至 43,385 Token 时，TTFT 约 89→186 ms、吞吐约 37.790→33.925 tok/s，仍全部成功；但 32768 上下文下并发 4 时吞吐降至 20.213 tok/s、P95 升至 89.116 s，而 HBM 仅小幅增加。因此 E3 证明模型不仅能加载长上下文，还能稳定处理单请求；同时表明长上下文下的主要风险是 Prefill/KV Cache 调度竞争，而不是本轮观测到的显存耗尽。HBM 采样只能提供方向性证据，不能精确拆分权重与 KV Cache。
 
@@ -247,6 +318,26 @@ E4-Q5 结果：3 个目标上下文 × 单并发，共 24/24 请求成功，失�
 与 E1 的 `UD-Q4_K_XL` 基线相比，Q5 在三个上下文上的生成速度约高 0.23 tok/s（约 0.6%），但 HBM 峰值从约 77.6 GiB 增至约 97.4 GiB，增加约 19.9 GiB；因此当前证据显示 Q5 的额外显存成本明显，而 serving 吞吐收益很小。
 
 质量可用性抽样：固定使用 MT-Bench Mini-8（`writing`、`roleplay`、`reasoning`、`math`、`coding`、`extraction`、`stem`、`humanities` 各一题的首轮），经同一 `llama-server` OpenAI-compatible 端点分别测试 Q4 与 Q5。两组均为 8/8 HTTP 200、失败率 0%，且 completion token 总数同为 3,037。
+
+E4-Q5 serving 的复测代码复用 E1–E3 的 `openai_server_matrix.py`；Q4 对照取 E1 的单并发基线。先将服务切换为 Q5、单 Slot（`-c 10240 --parallel 1`），再分终端启动服务并运行测量：
+
+```bash
+# 终端 A：
+"$SERVER" -m "$Q5" -ngl 999 -c 10240 --parallel 1 --jinja \
+  --host 127.0.0.1 --port 8000
+
+# 终端 B：
+cd /mnt/workspace/multimodal-deploy
+curl -fsS http://127.0.0.1:8000/health && echo
+python3 -u benchmarks/openai_server_matrix.py \
+  --config configs/benchmark/mi300x-serving-matrix.json \
+  --endpoint http://127.0.0.1:8000/v1/chat/completions \
+  --label qwen3.8-flash-next-ud-q5-k-xl-llamacpp-e4-serving \
+  --contexts 512,4096,8192 --concurrencies 1 \
+  --output results/llm/qwen3.8-flash-next/reproductions/llamacpp-e4-q5-serving-context512-4096-8192-raw.json
+```
+
+E4 的启动时间测量由 `server_startup_probe.py` 负责，Mini-8 质量测量由 `run_qwen_e4_quality.sh` 调用 `openai_quality_probe.py`；下方“E4 收尾”保留完整运行命令。
 
 | 量化 | 平均端到端耗时 | 平均观测输出速率 | 达到 512 token 上限的题数 | 空最终回答 |
 |---|---:|---:|---:|---|

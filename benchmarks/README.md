@@ -4,6 +4,17 @@
 
 The same client is used for llama.cpp, vLLM and SGLang. The backend-specific command is recorded in the model's backend document (for example, `llama.cpp.md`, `vllm.md` or `sglang.md`); the workload contract is [mi300x-serving-matrix.json](../configs/benchmark/mi300x-serving-matrix.json).
 
+## Experiment-to-code map
+
+| Experiment | Reusable code | Purpose |
+|---|---|---|
+| E1–E3 serving matrices | [`openai_server_matrix.py`](openai_server_matrix.py) + [`mi300x-serving-matrix.json`](../configs/benchmark/mi300x-serving-matrix.json) | Single-request baseline, client concurrency, long-context throughput/latency, TTFT and optional HBM sampling. Used by llama.cpp, vLLM and SGLang. |
+| E4 serving comparison | `openai_server_matrix.py` + the same workload contract | Re-run the E1 single-concurrency serving cells for an alternate quantization, as done for llama.cpp Q5. |
+| E4 quality sample | [`openai_quality_probe.py`](openai_quality_probe.py) + [`mtbench-mini-8.json`](quality/mtbench-mini-8.json) | Sequential fixed prompts; records raw choices, response text, `finish_reason`, token usage and latency. Supports and records request-level `chat_template_kwargs` (for example, `enable_thinking=false`). `run_qwen_e4_quality.sh` is the llama.cpp Q4/Q5 server-management wrapper. |
+| Startup readiness | [`server_startup_probe.py`](server_startup_probe.py) | Measures process launch to `/health` readiness, writes a JSON result and adjacent server log, and stops only the child it started. |
+
+Backend documents contain the exact server flags and run commands; this README identifies the shared measurement implementation. vLLM FP8 E4 reuses its E1–E3 serving/HBM results and adds startup-readiness plus fixed-quality measurements; llama.cpp E4 additionally compares Q4/Q5 serving. A comparison across vLLM FP8 and llama.cpp Q4/Q5 is cross-format evidence, not a pure backend or quantization ablation.
+
 ## Dry run
 
 ```powershell

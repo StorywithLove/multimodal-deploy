@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "experiment": "vLLM O2 E4 startup readiness",
+  "created_at": "2026-10-18",
+  "metric": "process_launch_to_health_ready",
+  "cache_state": "uncontrolled",
+  "configuration": {
+    "optimization_level": 2,
+    "tensor_parallel_size": 1,
+    "dtype": "auto",
+    "gpu_memory_utilization": 0.92,
+    "cpu_offload_gb": 8,
+    "max_model_len": 8192,
+    "max_num_seqs": 2
+  },
+  "summary": {
+    "runs": 3,
+    "ready_count": 3,
+    "mean_startup_s": 202.577,
+    "median_startup_s": 202.098,
+    "min_startup_s": 200.921,
+    "max_startup_s": 204.713,
+    "sample_stddev_s": 1.941
+  },
+  "raw_json_files": [
+    "vllm-fp8-o2-e4-startup-1-raw.json",
+    "vllm-fp8-o2-e4-startup-2-raw.json",
+    "vllm-fp8-o2-e4-startup-3-raw.json"
+  ],
+  "server_log_files": [
+    "vllm-fp8-o2-e4-startup-1-raw.server.log",
+    "vllm-fp8-o2-e4-startup-2-raw.server.log",
+    "vllm-fp8-o2-e4-startup-3-raw.server.log"
+  ],
+  "notes": [
+    "All three probes reached HTTP /health readiness. Logs show the probe-triggered server shutdown after readiness; the resulting EngineDeadError occurred during teardown, not before readiness.",
+    "Each startup log reports an optional Triton-kernel import incompatibility involving is_hip_gfx1250. The service nevertheless loaded the model and reached /health; retain this as a non-blocking environment warning."
+  ]
+}

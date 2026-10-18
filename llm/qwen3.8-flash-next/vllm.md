@@ -217,6 +217,14 @@ cd /mnt/workspace/multimodal-deploy
 
 当前性能测评使用 O2，服务从持久 venv 启动，模型权重仍从临时目录读取；不加 `--enforce-eager`。E1 的长上下文配置是 `max_model_len=8192, max_num_seqs=2`；E2 是 `8192, 8`；E3 是 `65536, 4`。以下示例为 E2：
 
+三个单元共用的启动超参数为 `--tensor-parallel-size 1`、`--dtype auto`、`--gpu-memory-utilization 0.92`、`--cpu-offload-gb 8`、`--optimization-level 2`；不添加 `--enforce-eager`。各单元仅按测评负载调整上下文上限与最大并发序列数：
+
+| 测评单元 | `--max-model-len` | `--max-num-seqs` | 用途 |
+|---|---:|---:|---|
+| E1 | 8192 | 2 | 单请求及上下文扩展基线；本次启动时间探针也使用此配置 |
+| E2 | 8192 | 8 | 并发 1/2/4/8 测试 |
+| E3 | 65536 | 4 | 长上下文测试 |
+
 ```bash
 cd /mnt/workspace/multimodal-deploy
 
@@ -242,6 +250,7 @@ O1、O2 均为编译服务；`--compilation-config '{"mode":0}'` 是早期诊断
 - 目标上下文不是实际 prompt 长度；实际输入 tokens 以 JSON 的 `actual_tokens` 为准。
 - `prompt_tokens_per_s` 为矩阵单元实际 prompt token 总数除以 wall time，不是独立 prefill kernel 吞吐；`completion_tokens_per_s` 为 completion token 总数除以 wall time。
 - 当前结果为单轮数据，适合阶段性比较，不代表多轮统计或置信区间。显存 `delta_gib=0` 仅表示采样期未观察到相对基线增量，不代表没有 KV cache 占用。
+- 测评代码：E1–E3 使用共享客户端 [openai_server_matrix.py](../../benchmarks/openai_server_matrix.py) 和工作负载 [mi300x-serving-matrix.json](../../configs/benchmark/mi300x-serving-matrix.json)；E4 使用 [server_startup_probe.py](../../benchmarks/server_startup_probe.py) 测量启动就绪时间、使用 [openai_quality_probe.py](../../benchmarks/openai_quality_probe.py) 与[固定题集](../../benchmarks/quality/mtbench-mini-8.json)做质量抽样。矩阵和质量客户端只请求已启动服务；启动探针负责启动并停止自己创建的服务进程。
 
 ### E1：O1/O2 对照及 O2 长上下文
 
@@ -283,9 +292,181 @@ O1、O2 均为编译服务；`--compilation-config '{"mode":0}'` 是早期诊断
 
 E3 补充单元（目标上下文 32768、并发 4，实际 prompt 21740 tokens）：8/8 成功，prompt 吞吐 6138.96 tok/s，completion 吞吐 72.29 tok/s，TTFT 0.730 s，latency p50/p95 为 13.735/14.219 s。
 
+### 复测命令
+
+以下命令均在 AMD 实例的项目目录中运行；先启动对应 O1/O2 服务并确认 `/health` 返回 200。每次复测使用独立输出名，避免覆盖已归档原始 JSON。E1 的 O1 单元对应 `max_model_len=1024, max_num_seqs=2`；O2 扩展单元对应 `8192, 2`。若通过会在命令退出后关闭窗口的 Exec 运行，可在命令末尾加 `read -r -p '检查完成；按回车关闭此终端...'`；JSON 输出不依赖终端是否保持打开。
+
+```bash
+cd /mnt/workspace/multimodal-deploy
+python3 -u benchmarks/openai_server_matrix.py \
+  --config configs/benchmark/mi300x-serving-matrix.json \
+  --endpoint http://127.0.0.1:8000/v1/chat/completions \
+  --model qwen3.8-flash-next-fp8 \
+  --label qwen3.8-flash-next-fp8-vllm-o1-e1-context512 \
+  --contexts 512 --concurrencies 1 \
+  --output results/llm/qwen3.8-flash-next/reproductions/vllm-o1-e1-context512-raw.json
+```
+
+O2 E1 扩展单元（服务端 `max_model_len=8192, max_num_seqs=2`）：
+
+```bash
+cd /mnt/workspace/multimodal-deploy
+python3 -u benchmarks/openai_server_matrix.py \
+  --config configs/benchmark/mi300x-serving-matrix.json \
+  --endpoint http://127.0.0.1:8000/v1/chat/completions \
+  --model qwen3.8-flash-next-fp8 \
+  --label qwen3.8-flash-next-fp8-vllm-o2-e1-context512-4096-8192 \
+  --contexts 512,4096,8192 --concurrencies 1 \
+  --output results/llm/qwen3.8-flash-next/reproductions/vllm-o2-e1-context512-4096-8192-raw.json
+```
+
+E2 使用 O2 服务（`max_model_len=8192, max_num_seqs=8`）：
+
+```bash
+cd /mnt/workspace/multimodal-deploy
+python3 -u benchmarks/openai_server_matrix.py \
+  --config configs/benchmark/mi300x-serving-matrix.json \
+  --endpoint http://127.0.0.1:8000/v1/chat/completions \
+  --model qwen3.8-flash-next-fp8 \
+  --label qwen3.8-flash-next-fp8-vllm-o2-e2-context512-4096-8192-concurrency1-2-4-8 \
+  --contexts 512,4096,8192 --concurrencies 1,2,4,8 \
+  --output results/llm/qwen3.8-flash-next/reproductions/vllm-o2-e2-context512-4096-8192-concurrency1-2-4-8-raw.json
+```
+
+E3 基线使用 O2 服务（`max_model_len=65536, max_num_seqs=4`），单并发长上下文：
+
+```bash
+cd /mnt/workspace/multimodal-deploy
+python3 -u benchmarks/openai_server_matrix.py \
+  --config configs/benchmark/mi300x-serving-matrix.json \
+  --endpoint http://127.0.0.1:8000/v1/chat/completions \
+  --model qwen3.8-flash-next-fp8 \
+  --label qwen3.8-flash-next-fp8-vllm-o2-e3-context8192-32768-65536-c1 \
+  --contexts 8192,32768,65536 --concurrencies 1 \
+  --output results/llm/qwen3.8-flash-next/reproductions/vllm-o2-e3-context8192-32768-65536-c1-raw.json
+```
+
+E3 的 32768/C4 补充单元（同一 E3 服务配置）：
+
+```bash
+cd /mnt/workspace/multimodal-deploy
+python3 -u benchmarks/openai_server_matrix.py \
+  --config configs/benchmark/mi300x-serving-matrix.json \
+  --endpoint http://127.0.0.1:8000/v1/chat/completions \
+  --model qwen3.8-flash-next-fp8 \
+  --label qwen3.8-flash-next-fp8-vllm-o2-e3-context32768-c4 \
+  --contexts 32768 --concurrencies 4 \
+  --output results/llm/qwen3.8-flash-next/reproductions/vllm-o2-e3-context32768-c4-raw.json
+```
+
+### E4：FP8 路线的启动与质量补充
+
+llama.cpp 的 E4 是量化权衡实验，包含 Q5 serving、Q4/Q5 启动就绪时间及 Q4/Q5 Mini-8 质量抽样。vLLM 当前只有 FP8 路线，没有同一后端的 Q4/Q5 量化对照；因此复用已完成的 O2 E1–E3 serving/HBM 结果，不重跑性能矩阵，补测 O2 FP8 的启动就绪时间和 Mini-8 质量。与 llama.cpp 的跨后端结果只能视为不同精度/格式的部署路线比较。
+
+先在 O2 服务已健康时运行 Mini-8。脚本串行发送 8 个请求，保存每题完整 choices、`finish_reason`、usage 和响应文本到 JSON，不另建服务日志：
+
+```bash
+cd /mnt/workspace/multimodal-deploy
+if curl -fsS http://127.0.0.1:8000/health >/dev/null; then
+  curl -sS -o /dev/null -w 'health_http=%{http_code}\n' http://127.0.0.1:8000/health
+  curl -fsS http://127.0.0.1:8000/v1/models
+  echo
+  python3 -u benchmarks/openai_quality_probe.py \
+    --questions benchmarks/quality/mtbench-mini-8.json \
+    --endpoint http://127.0.0.1:8000/v1/chat/completions \
+    --model qwen3.8-flash-next-fp8 \
+    --label qwen3.8-flash-next-fp8-vllm-o2-e4-quality-mini8-max4096 \
+    --max-tokens 4096 --temperature 0 --timeout 600 \
+    --output results/llm/qwen3.8-flash-next/qwen3.8-flash-next-vllm-fp8-o2-e4-quality-mini8-max4096-raw.json
+  probe_rc=$?
+  printf 'quality_probe_rc=%s\n' "$probe_rc"
+else
+  echo '停止：O2 服务未通过 /health；不加载模型、不开始测评。'
+fi
+read -r -p '检查完成；按回车关闭此终端...'
+```
+
+针对默认思考模板出现过程性文本与 `</think>` 的情况，可在相同 Mini-8 工作负载上通过请求级 `chat_template_kwargs` 关闭 thinking 后复测。该参数由 `openai_quality_probe.py` 0.1.2 支持：
+
+```bash
+cd /mnt/workspace/multimodal-deploy
+if curl -fsS http://127.0.0.1:8000/health >/dev/null; then
+  python3 -u benchmarks/openai_quality_probe.py \
+    --questions benchmarks/quality/mtbench-mini-8.json \
+    --endpoint http://127.0.0.1:8000/v1/chat/completions \
+    --model qwen3.8-flash-next-fp8 \
+    --label qwen3.8-flash-next-fp8-vllm-o2-e4-quality-mini8-max4096-no-thinking \
+    --max-tokens 4096 --temperature 0 --timeout 600 \
+    --chat-template-kwargs '{"enable_thinking":false}' \
+    --output results/llm/qwen3.8-flash-next/qwen3.8-flash-next-vllm-fp8-o2-e4-quality-mini8-max4096-no-thinking-raw.json
+  probe_rc=$?
+  printf 'quality_probe_rc=%s\n' "$probe_rc"
+else
+  echo '停止：O2 服务未通过 /health；不发送质量请求。'
+fi
+read -r -p '检查完成；按回车关闭此终端...'
+```
+
+Mini-8 只用于可用性和输出行为抽样；人工核对正确性、指令遵循、空回答及截断。与 GGUF Q4/Q5 的结果只能作跨精度部署路线观察，不能据此归因成纯量化或纯框架优势。
+
+#### Mini-8 质量抽样结果（2026-10-18）
+
+[原始 JSON](../../results/llm/qwen3.8-flash-next/qwen3.8-flash-next-vllm-fp8-o2-e4-quality-mini8-max4096-raw.json)：8/8 请求成功、0 失败、0 空回答、0 个 `finish_reason=length`；总 completion 为 8,809 tokens，平均请求耗时 30.60 s，平均观测输出速率 34.30 tokens/s。该速率包含请求端到端开销，不等同于服务端纯 decode 吞吐。
+
+| 类别 | 耗时 (s) | completion tokens | finish_reason |
+|---|---:|---:|---|
+| writing | 113.61 | 4093 | stop |
+| roleplay | 16.91 | 613 | stop |
+| reasoning | 2.85 | 98 | stop |
+| math | 7.14 | 255 | stop |
+| coding | 40.80 | 1489 | stop |
+| extraction | 3.57 | 82 | stop |
+| stem | 14.00 | 506 | stop |
+| humanities | 45.90 | 1673 | stop |
+
+格式诊断：8/8 个默认模板响应都含 `</think>`，其中多题正文还出现类似 “We need to respond…” 的过程性前缀；writing 题生成 4093 tokens，接近 4096 上限，但 `finish_reason=stop`，不属于 length 截断。该轮确认接口和题集可运行，但可见格式异常，因此另以请求级 `enable_thinking=false` 复测；两轮原始 JSON 均保留。Mini-8 是可用性与输出行为抽样，不等同于人工质量评分。
+
+#### 关闭 thinking 的 Mini-8 复测（2026-10-18）
+
+[原始 JSON](../../results/llm/qwen3.8-flash-next/qwen3.8-flash-next-vllm-fp8-o2-e4-quality-mini8-max4096-no-thinking-raw.json)：同一 8 题、temperature 0、max tokens 4096，仅增加 `chat_template_kwargs={"enable_thinking":false}`。8/8 成功、0 失败、0 空回答、0 个 `finish_reason=length`，总 completion 为 6,034 tokens，平均耗时 20.84 s，平均观测输出速率 33.41 tokens/s；8/8 正文均不含 `</think>` 或上述过程性前缀。格式问题在该请求设置下消失。该轮输出 token 总量与默认 thinking 轮不同，因此耗时和观测速率不能用于推断开关带来的性能提升；正文仍需人工评估正确性和指令遵循。
+
+随后停止现有 O2 服务，再测量 O2 E1 配置（`max_model_len=8192, max_num_seqs=2`）进程启动到 `/health` 就绪的时间，共 3 轮。每轮都会重新加载模型；探针将结果写入 JSON，并将服务输出写到同名 `.server.log`。确认 8000 端口空闲后运行：
+
+```bash
+cd /mnt/workspace/multimodal-deploy
+export PERSIST_VENV=/mnt/workspace/artifacts/qwen3.8-flash-next-vllm/vllm0310-20261017/venv-vllm-0310
+export VLLM_PY="$PERSIST_VENV/bin/python"
+export MODEL_DIR=/root/tmp/qwen3.8-flash-next/Qwen3.8-Flash-Next-FP8
+
+if ss -ltnH 'sport = :8000' 2>/dev/null | grep -q .; then
+  echo '停止：8000 端口仍在监听；先停止现有服务，再运行启动探针。'
+else
+  for run in 1 2 3; do
+    printf '\n=== vLLM O2 E4 startup run %s/3 ===\n' "$run"
+    python3 -u benchmarks/server_startup_probe.py \
+      --output "results/llm/qwen3.8-flash-next/reproductions/vllm-fp8-o2-e4-startup-${run}-raw.json" \
+      --cache-state uncontrolled --timeout 1200 -- \
+      "$VLLM_PY" -m vllm.entrypoints.openai.api_server \
+      --model "$MODEL_DIR" \
+      --served-model-name qwen3.8-flash-next-fp8 \
+      --host 127.0.0.1 --port 8000 \
+      --tensor-parallel-size 1 --dtype auto \
+      --gpu-memory-utilization 0.92 --cpu-offload-gb 8 \
+      --max-model-len 8192 --max-num-seqs 2 \
+      --optimization-level 2
+    probe_rc=$?
+    printf 'startup_probe_rc=%s\n' "$probe_rc"
+    if [ "$probe_rc" -ne 0 ]; then break; fi
+  done
+fi
+read -r -p '启动时间测量结束；按回车关闭此终端...'
+```
+
+该指标是 `process_launch_to_health_ready`，包含权重加载、编译/图准备、KV cache 分配和服务初始化；`uncontrolled` 不代表冷启动。三轮均重新启动并加载模型，3/3 到达 `/health`：平均 202.577 s，中位数 202.098 s，范围 200.921–204.713 s，样本标准差 1.941 s。[汇总 JSON](../../results/llm/qwen3.8-flash-next/reproductions/vllm-fp8-o2-e4-startup-summary-raw.json) 与三份逐轮 JSON、`.server.log` 一并归档。三份日志均有 `is_hip_gfx1250` Triton kernel 导入兼容性报错，但随后模型加载完成并返回 health 200；探针触发服务退出后出现的 `EngineDeadError` 位于 teardown 阶段，不是就绪前启动失败。该启动时间不能替代 TTFT；E4 应与 E1–E3 性能/HBM 结果分开呈现。
+
 ### 当前进度
 
-E1、E2、E3 上述单元已完成；E3 的 32768/C4 补充单元也已归档。vLLM E4 尚未完成。
+E1、E2、E3 上述单元已完成；E3 的 32768/C4 补充单元也已归档。E4 默认 thinking 与关闭 thinking 的 Mini-8、以及 3 轮 O2 E1 启动就绪测量均已完成并归档。E1–E3 性能/HBM 结果作为 E4 的既有 serving 证据复用。
 
 ## 附录：Torch Dynamo 的 `query_start_loc.size()[0]` 动态维约束
 

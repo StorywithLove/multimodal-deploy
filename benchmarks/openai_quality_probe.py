@@ -24,7 +24,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 
-SCRIPT_VERSION = "0.1.1"
+SCRIPT_VERSION = "0.1.2"
 
 
 def utc_now() -> str:
@@ -186,6 +186,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--timeout", type=float, default=600.0)
     parser.add_argument(
+        "--chat-template-kwargs",
+        help=(
+            "Optional JSON object passed as request-level chat_template_kwargs, "
+            'for example: \'{"enable_thinking":false}\''
+        ),
+    )
+    parser.add_argument(
         "--system-prompt",
         default="You are a helpful assistant.",
         help="Fixed system prompt sent for every question",
@@ -197,6 +204,14 @@ def main() -> int:
     args = build_parser().parse_args()
     if args.max_tokens <= 0 or args.timeout <= 0:
         raise SystemExit("--max-tokens and --timeout must be positive")
+    chat_template_kwargs = None
+    if args.chat_template_kwargs is not None:
+        try:
+            chat_template_kwargs = json.loads(args.chat_template_kwargs)
+        except json.JSONDecodeError as exc:
+            raise SystemExit(f"--chat-template-kwargs must be valid JSON: {exc}") from exc
+        if not isinstance(chat_template_kwargs, dict):
+            raise SystemExit("--chat-template-kwargs must be a JSON object")
 
     question_metadata, questions = read_questions(args.questions)
     model = args.model or discover_model(args.endpoint, args.timeout)
@@ -214,6 +229,8 @@ def main() -> int:
             "max_tokens": args.max_tokens,
             "stream": False,
         }
+        if chat_template_kwargs is not None:
+            payload["chat_template_kwargs"] = chat_template_kwargs
         request_started = time.perf_counter()
         status, data, error = json_post(args.endpoint, payload, args.timeout)
         elapsed_s = time.perf_counter() - request_started
@@ -302,6 +319,7 @@ def main() -> int:
             "temperature": args.temperature,
             "max_tokens": args.max_tokens,
             "system_prompt": args.system_prompt,
+            "chat_template_kwargs": chat_template_kwargs,
             "question_file": os.path.abspath(args.questions),
             "question_metadata": question_metadata,
         },
