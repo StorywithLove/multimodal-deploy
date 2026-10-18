@@ -71,7 +71,7 @@ multimodal-deploy/
 <tr>
 <td>FP8 Safetensors + vLLM</td>
 <td>文本 LLM 推理与服务</td>
-<td>vLLM 0.31.0+rocm723 源码构建完成；<code>--enforce-eager</code> 启动、健康检查和单请求通过；默认 V1 编译路径仍有动态形状错误</td>
+<td>vLLM 部署及 E1–E3 测评已完成；O1/O2 compiled 启动验证通过，包含本地 PLE/GDN 兼容补丁；E4 待补</td>
 <td>AMD MI300X 192GB / ROCm 7.2.3</td>
 <td><a href="llm/qwen3.8-flash-next/vllm.md">vLLM</a></td>
 </tr>
@@ -116,4 +116,3 @@ multimodal-deploy/
 - 不提交模型权重、视频 / 图片大文件、临时日志、云端 URL、Cookie 或访问令牌。
 - 运行 API 示例前，通过环境变量注入凭据，例如 `MODELSCOPE_API_TOKEN`，不要把令牌写入源文件。
 - 对外发布前仍需确定代码托管平台、仓库可见性和许可证；本地 Git 仓库可在这些选择确定后直接推送。
-

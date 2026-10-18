@@ -40,4 +40,3 @@ GGUF Q4 与原生 BF16、FP8 等权重格式不能被表述为“纯框架胜负
 | Qwen3.8-Flash-Next / FP8 | 文本 LLM 推理与服务 | SGLang / Safetensors FP8 | 待 MI300X 启动预检 | AMD MI300X 192GB | [SGLang](qwen3.8-flash-next/sglang.md) |
 
 后续顺序：先完成该 GGUF 路线的 E1–E4，再用同一官方 FP8 Safetensors 权重分别做 vLLM 与 SGLang 的单请求预检；只有 E1 参数和启动结果稳定后，才扩展到 E2/E3。
-
