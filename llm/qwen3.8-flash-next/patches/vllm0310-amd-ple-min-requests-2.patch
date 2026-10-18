@@ -1,0 +1,12 @@
+diff --git a/vllm/models/qwen4_exp/amd/ple_layer.py b/vllm/models/qwen4_exp/amd/ple_layer.py
+--- a/vllm/models/qwen4_exp/amd/ple_layer.py
++++ b/vllm/models/qwen4_exp/amd/ple_layer.py
+@@ -281,7 +281,7 @@
+             "padded_buffer",
+             torch.full(
+-                (max_num_reqs, max_total_tokens),
++                (max(2, max_num_reqs), max_total_tokens),
+                 self.eos_token_id,
+                 dtype=torch.int64,
+             ),
+             persistent=False,

@@ -1,0 +1,708 @@
+{
+  "schema_version": 1,
+  "artifact_type": "vllm-e1-collection",
+  "model": "Qwen3.8-Flash-Next",
+  "backend": "vLLM",
+  "description": "按优化档和上下文矩阵合并的 E1 性能结果；每个 raw 保留完整 per-request 记录。source_files 仅保留历史文件名；对应原始文件已删除。",
+  "results": {
+    "vLLM_0.31.0_O1": {
+      "source_files": [
+        "qwen3.8-flash-next-vllm-fp8-o1-e1-context512-raw.json"
+      ],
+      "configuration_note": "max_model_len=1024，max_num_seqs=2；512 目标上下文，单并发。",
+      "raw": {
+        "schema_version": 1,
+        "script_version": "0.2.2",
+        "created_at_utc": "2026-10-18T06:37:58.653590+00:00",
+        "label": "qwen3.8-flash-next-fp8-vllm-o1-e1-context512",
+        "endpoint": "http://127.0.0.1:8000/v1/chat/completions",
+        "model": "qwen3.8-flash-next-fp8",
+        "host": {
+          "hostname": "dsw-2268973-774ccd8b96-m7wh9",
+          "platform": "Linux-5.10.134-008.14.kangaroo.al8.x86_64-x86_64-with-glibc2.35",
+          "python": "3.12.13",
+          "pid": 112987
+        },
+        "config_file": "/mnt/workspace/multimodal-deploy/configs/benchmark/mi300x-serving-matrix.json",
+        "workload": {
+          "label": "qwen3.8-flash-next-fp8-vllm-o1-e1-context512",
+          "contexts": [
+            512
+          ],
+          "concurrencies": [
+            1
+          ],
+          "max_tokens": 256,
+          "requests_per_cell": 8,
+          "warmup_requests": 1,
+          "temperature": 0,
+          "ttft_probe": true,
+          "gpu_sampling": true,
+          "cells": 1
+        },
+        "cells": [
+          {
+            "requests": 8,
+            "completed": 8,
+            "failed": 0,
+            "failure_rate": 0,
+            "wall_time_s": 72.074462,
+            "throughput": {
+              "requests_per_s": 0.110996,
+              "prompt_tokens_per_s": 48.061406,
+              "completion_tokens_per_s": 28.415058
+            },
+            "latency_s": {
+              "p50": 8.956305,
+              "p95": 9.01489
+            },
+            "actual_tokens": {
+              "prompt_total": 3464,
+              "completion_total": 2048
+            },
+            "ttft_probe": {
+              "ok": true,
+              "first_event_s": 0.32429558399962843,
+              "ttft_s": 0.32432750000225496
+            },
+            "gpu": {
+              "command": "rocm-smi --showmeminfo vram --json",
+              "samples": 125,
+              "baseline_gib": 174.7619,
+              "peak_gib": 174.7619,
+              "delta_gib": 0
+            },
+            "per_request": [
+              {
+                "request_id": 0,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T06:36:46.921302+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 9.004989
+              },
+              {
+                "request_id": 1,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T06:36:55.926322+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 8.914871
+              },
+              {
+                "request_id": 2,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T06:37:04.841221+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 8.929736
+              },
+              {
+                "request_id": 3,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T06:37:13.770984+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 8.894337
+              },
+              {
+                "request_id": 4,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T06:37:22.665343+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 8.973053
+              },
+              {
+                "request_id": 5,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T06:37:31.638424+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 9.020222
+              },
+              {
+                "request_id": 6,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T06:37:40.658680+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 8.967424
+              },
+              {
+                "request_id": 7,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T06:37:49.626128+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 8.945187
+              }
+            ],
+            "target_context": 512,
+            "concurrency": 1
+          }
+        ]
+      }
+    },
+    "vLLM_0.31.0_O2_context512": {
+      "source_files": [
+        "qwen3.8-flash-next-vllm-fp8-o2-e1-context512-raw.json"
+      ],
+      "configuration_note": "max_model_len=1024，max_num_seqs=2；512 目标上下文，单并发。",
+      "raw": {
+        "schema_version": 1,
+        "script_version": "0.2.2",
+        "created_at_utc": "2026-10-18T07:16:00.885567+00:00",
+        "label": "qwen3.8-flash-next-fp8-vllm-o2-e1-context512",
+        "endpoint": "http://127.0.0.1:8000/v1/chat/completions",
+        "model": "qwen3.8-flash-next-fp8",
+        "host": {
+          "hostname": "dsw-2268973-774ccd8b96-m7wh9",
+          "platform": "Linux-5.10.134-008.14.kangaroo.al8.x86_64-x86_64-with-glibc2.35",
+          "python": "3.12.13",
+          "pid": 121735
+        },
+        "config_file": "/mnt/workspace/multimodal-deploy/configs/benchmark/mi300x-serving-matrix.json",
+        "workload": {
+          "label": "qwen3.8-flash-next-fp8-vllm-o2-e1-context512",
+          "contexts": [
+            512
+          ],
+          "concurrencies": [
+            1
+          ],
+          "max_tokens": 256,
+          "requests_per_cell": 8,
+          "warmup_requests": 1,
+          "temperature": 0,
+          "ttft_probe": true,
+          "gpu_sampling": true,
+          "cells": 1
+        },
+        "cells": [
+          {
+            "requests": 8,
+            "completed": 8,
+            "failed": 0,
+            "failure_rate": 0,
+            "wall_time_s": 56.78362,
+            "throughput": {
+              "requests_per_s": 0.140886,
+              "prompt_tokens_per_s": 61.003508,
+              "completion_tokens_per_s": 36.066739
+            },
+            "latency_s": {
+              "p50": 7.043286,
+              "p95": 7.069461
+            },
+            "actual_tokens": {
+              "prompt_total": 3464,
+              "completion_total": 2048
+            },
+            "ttft_probe": {
+              "ok": true,
+              "first_event_s": 0.31000094000046374,
+              "ttft_s": 0.31003641900315415
+            },
+            "gpu": {
+              "command": "rocm-smi --showmeminfo vram --json",
+              "samples": 99,
+              "baseline_gib": 174.7617,
+              "peak_gib": 174.7617,
+              "delta_gib": 0
+            },
+            "per_request": [
+              {
+                "request_id": 0,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T07:15:04.417226+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 7.082577
+              },
+              {
+                "request_id": 1,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T07:15:11.499837+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 7.040732
+              },
+              {
+                "request_id": 2,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T07:15:18.540608+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 7.042245
+              },
+              {
+                "request_id": 3,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T07:15:25.582864+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 7.041807
+              },
+              {
+                "request_id": 4,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T07:15:32.624696+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 7.042421
+              },
+              {
+                "request_id": 5,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T07:15:39.667143+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 7.044151
+              },
+              {
+                "request_id": 6,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T07:15:46.711317+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 7.044293
+              },
+              {
+                "request_id": 7,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T07:15:53.755636+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 7.045104
+              }
+            ],
+            "target_context": 512,
+            "concurrency": 1
+          }
+        ]
+      }
+    },
+    "vLLM_0.31.0_O2_context512_4096_8192": {
+      "source_files": [
+        "qwen3.8-flash-next-vllm-fp8-o2-e1-context512-4096-8192-raw.json"
+      ],
+      "configuration_note": "max_model_len=8192，max_num_seqs=2；512/4096/8192 目标上下文，单并发。",
+      "raw": {
+        "schema_version": 1,
+        "script_version": "0.2.2",
+        "created_at_utc": "2026-10-18T07:37:57.914271+00:00",
+        "label": "qwen3.8-flash-next-fp8-vllm-o2-e1-context512-4096-8192",
+        "endpoint": "http://127.0.0.1:8000/v1/chat/completions",
+        "model": "qwen3.8-flash-next-fp8",
+        "host": {
+          "hostname": "dsw-2268973-774ccd8b96-m7wh9",
+          "platform": "Linux-5.10.134-008.14.kangaroo.al8.x86_64-x86_64-with-glibc2.35",
+          "python": "3.12.13",
+          "pid": 126383
+        },
+        "config_file": "/mnt/workspace/multimodal-deploy/configs/benchmark/mi300x-serving-matrix.json",
+        "workload": {
+          "label": "qwen3.8-flash-next-fp8-vllm-o2-e1-context512-4096-8192",
+          "contexts": [
+            512,
+            4096,
+            8192
+          ],
+          "concurrencies": [
+            1
+          ],
+          "max_tokens": 256,
+          "requests_per_cell": 8,
+          "warmup_requests": 1,
+          "temperature": 0,
+          "ttft_probe": true,
+          "gpu_sampling": true,
+          "cells": 3
+        },
+        "cells": [
+          {
+            "requests": 8,
+            "completed": 8,
+            "failed": 0,
+            "failure_rate": 0,
+            "wall_time_s": 56.931792,
+            "throughput": {
+              "requests_per_s": 0.140519,
+              "prompt_tokens_per_s": 60.844738,
+              "completion_tokens_per_s": 35.972871
+            },
+            "latency_s": {
+              "p50": 7.060793,
+              "p95": 7.088687
+            },
+            "actual_tokens": {
+              "prompt_total": 3464,
+              "completion_total": 2048
+            },
+            "ttft_probe": {
+              "ok": true,
+              "first_event_s": 0.31112283999755164,
+              "ttft_s": 0.31115669299833826
+            },
+            "gpu": {
+              "command": "rocm-smi --showmeminfo vram --json",
+              "samples": 100,
+              "baseline_gib": 174.0899,
+              "peak_gib": 174.0899,
+              "delta_gib": 0
+            },
+            "per_request": [
+              {
+                "request_id": 0,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T07:34:45.690958+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 7.101576
+              },
+              {
+                "request_id": 1,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T07:34:52.792561+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 7.059703
+              },
+              {
+                "request_id": 2,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T07:34:59.852291+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 7.060502
+              },
+              {
+                "request_id": 3,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T07:35:06.912822+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 7.06316
+              },
+              {
+                "request_id": 4,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T07:35:13.976005+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 7.061084
+              },
+              {
+                "request_id": 5,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T07:35:21.037114+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 7.059327
+              },
+              {
+                "request_id": 6,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T07:35:28.096465+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 7.060185
+              },
+              {
+                "request_id": 7,
+                "target_context": 512,
+                "started_at_utc": "2026-10-18T07:35:35.156680+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 433,
+                "completion_tokens": 256,
+                "latency_s": 7.06475
+              }
+            ],
+            "target_context": 512,
+            "concurrency": 1
+          },
+          {
+            "requests": 8,
+            "completed": 8,
+            "failed": 0,
+            "failure_rate": 0,
+            "wall_time_s": 59.333996,
+            "throughput": {
+              "requests_per_s": 0.13483,
+              "prompt_tokens_per_s": 377.658706,
+              "completion_tokens_per_s": 34.516469
+            },
+            "latency_s": {
+              "p50": 7.330697,
+              "p95": 7.355269
+            },
+            "actual_tokens": {
+              "prompt_total": 22408,
+              "completion_total": 2048
+            },
+            "ttft_probe": {
+              "ok": true,
+              "first_event_s": 0.5477336539988755,
+              "ttft_s": 0.5477641319994291
+            },
+            "gpu": {
+              "command": "rocm-smi --showmeminfo vram --json",
+              "samples": 104,
+              "baseline_gib": 174.4943,
+              "peak_gib": 174.4943,
+              "delta_gib": 0
+            },
+            "per_request": [
+              {
+                "request_id": 0,
+                "target_context": 4096,
+                "started_at_utc": "2026-10-18T07:35:52.459982+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 2801,
+                "completion_tokens": 256,
+                "latency_s": 7.367389
+              },
+              {
+                "request_id": 1,
+                "target_context": 4096,
+                "started_at_utc": "2026-10-18T07:35:59.827395+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 2801,
+                "completion_tokens": 256,
+                "latency_s": 7.330187
+              },
+              {
+                "request_id": 2,
+                "target_context": 4096,
+                "started_at_utc": "2026-10-18T07:36:07.157616+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 2801,
+                "completion_tokens": 256,
+                "latency_s": 7.332759
+              },
+              {
+                "request_id": 3,
+                "target_context": 4096,
+                "started_at_utc": "2026-10-18T07:36:14.490401+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 2801,
+                "completion_tokens": 256,
+                "latency_s": 7.331633
+              },
+              {
+                "request_id": 4,
+                "target_context": 4096,
+                "started_at_utc": "2026-10-18T07:36:21.822060+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 2801,
+                "completion_tokens": 256,
+                "latency_s": 7.329337
+              },
+              {
+                "request_id": 5,
+                "target_context": 4096,
+                "started_at_utc": "2026-10-18T07:36:29.151419+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 2801,
+                "completion_tokens": 256,
+                "latency_s": 7.330045
+              },
+              {
+                "request_id": 6,
+                "target_context": 4096,
+                "started_at_utc": "2026-10-18T07:36:36.481488+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 2801,
+                "completion_tokens": 256,
+                "latency_s": 7.33004
+              },
+              {
+                "request_id": 7,
+                "target_context": 4096,
+                "started_at_utc": "2026-10-18T07:36:43.811553+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 2801,
+                "completion_tokens": 256,
+                "latency_s": 7.331208
+              }
+            ],
+            "target_context": 4096,
+            "concurrency": 1
+          },
+          {
+            "requests": 8,
+            "completed": 8,
+            "failed": 0,
+            "failure_rate": 0,
+            "wall_time_s": 58.154213,
+            "throughput": {
+              "requests_per_s": 0.137565,
+              "prompt_tokens_per_s": 757.571947,
+              "completion_tokens_per_s": 35.216709
+            },
+            "latency_s": {
+              "p50": 7.202583,
+              "p95": 7.222196
+            },
+            "actual_tokens": {
+              "prompt_total": 44056,
+              "completion_total": 2048
+            },
+            "ttft_probe": {
+              "ok": true,
+              "first_event_s": 0.41679629600184853,
+              "ttft_s": 0.41682387000037124
+            },
+            "gpu": {
+              "command": "rocm-smi --showmeminfo vram --json",
+              "samples": 101,
+              "baseline_gib": 175.3166,
+              "peak_gib": 175.3166,
+              "delta_gib": 0
+            },
+            "per_request": [
+              {
+                "request_id": 0,
+                "target_context": 8192,
+                "started_at_utc": "2026-10-18T07:37:00.181792+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 5507,
+                "completion_tokens": 256,
+                "latency_s": 7.231792
+              },
+              {
+                "request_id": 1,
+                "target_context": 8192,
+                "started_at_utc": "2026-10-18T07:37:07.413618+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 5507,
+                "completion_tokens": 256,
+                "latency_s": 7.201781
+              },
+              {
+                "request_id": 2,
+                "target_context": 8192,
+                "started_at_utc": "2026-10-18T07:37:14.615422+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 5507,
+                "completion_tokens": 256,
+                "latency_s": 7.202939
+              },
+              {
+                "request_id": 3,
+                "target_context": 8192,
+                "started_at_utc": "2026-10-18T07:37:21.818385+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 5507,
+                "completion_tokens": 256,
+                "latency_s": 7.20083
+              },
+              {
+                "request_id": 4,
+                "target_context": 8192,
+                "started_at_utc": "2026-10-18T07:37:29.019239+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 5507,
+                "completion_tokens": 256,
+                "latency_s": 7.200936
+              },
+              {
+                "request_id": 5,
+                "target_context": 8192,
+                "started_at_utc": "2026-10-18T07:37:36.220198+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 5507,
+                "completion_tokens": 256,
+                "latency_s": 7.202731
+              },
+              {
+                "request_id": 6,
+                "target_context": 8192,
+                "started_at_utc": "2026-10-18T07:37:43.422954+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 5507,
+                "completion_tokens": 256,
+                "latency_s": 7.202436
+              },
+              {
+                "request_id": 7,
+                "target_context": 8192,
+                "started_at_utc": "2026-10-18T07:37:50.625414+00:00",
+                "http_status": 200,
+                "ok": true,
+                "prompt_tokens": 5507,
+                "completion_tokens": 256,
+                "latency_s": 7.204376
+              }
+            ],
+            "target_context": 8192,
+            "concurrency": 1
+          }
+        ]
+      }
+    }
+  }
+}

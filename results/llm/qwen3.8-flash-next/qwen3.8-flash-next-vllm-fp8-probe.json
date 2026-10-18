@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "artifact_type": "vllm-probe-collection",
+  "model": "Qwen3.8-Flash-Next",
+  "backend": "vLLM",
+  "description": "按问题假设合并的诊断探针；探针结果不等同于完整 GPU 服务验证。source_files 仅保留历史文件名；对应原始文件已删除。",
+  "results": {
+    "PLE_request_guard": {
+      "source_files": [
+        "qwen3.8-flash-next-vllm-fp8-ple-request-guard-probe.json"
+      ],
+      "scope": "isolated Dynamo guard; no full service validation",
+      "raw": {
+        "torch_version": "2.12.0+git6bbd260",
+        "torch_path": "/usr/local/lib/python3.12/dist-packages/torch/__init__.py",
+        "device": "cpu",
+        "backend": "eager",
+        "fullgraph": true,
+        "cases": [
+          {
+            "request_capacity": 1,
+            "query_lengths_checked": [],
+            "status": "failed",
+            "error_type": "ConstraintViolationError",
+            "error": "Constraints violated (L['query_start_loc'].size()[0])! For more information, run with TORCH_LOGS=\"+dynamic\".\n  - You marked L['query_start_loc'].size()[0] as dynamic but your code specialized it to be a constant (2). If you're using mark_dynamic, either remove it or use maybe_mark_dynamic. If you're using Dim.DYNAMIC, replace it with either Dim.STATIC or Dim.AUTO.\n\nUser stack:\n  File \"/mnt/workspace/multimodal-deploy/llm/qwen3.8-flash-next/patches/probe_ple_request_guard.py\", line 20, in forward\n    if num_reqs > self.padded_buffer.shape[0]:\n\n"
+          },
+          {
+            "request_capacity": 2,
+            "query_lengths_checked": [
+              2,
+              3
+            ],
+            "status": "passed"
+          }
+        ],
+        "capacity_guard_hypothesis_supported": true,
+        "scope": "isolated Dynamo guard only; full O1 validation still required"
+      }
+    },
+    "PLE_slice_cat": {
+      "source_files": [
+        "qwen3.8-flash-next-vllm-fp8-ple-slice-cat-probe.json"
+      ],
+      "scope": "isolated CPU shape/buffer probe; no model weights or full service validation",
+      "raw": {
+        "observed_at": "2026-10-18T13:00:24",
+        "torch_version": "2.12.0+git6bbd260",
+        "probe": {
+          "compiled_backend": "eager",
+          "fullgraph": true,
+          "operation": "ngram_context[:num_reqs].to(long) concatenated with padded_buffer[:num_reqs]",
+          "model_weights_loaded": false
+        },
+        "cases": [
+          {
+            "ngram_rows": 1,
+            "padded_rows": 2,
+            "query_start_loc_length": 2,
+            "status": "fail",
+            "error_type": "ConstraintViolationError",
+            "error": "query_start_loc.size()[0] marked dynamic but specialized to constant 2"
+          },
+          {
+            "ngram_rows": 2,
+            "padded_rows": 2,
+            "results": [
+              {
+                "query_start_loc_length": 2,
+                "status": "pass",
+                "output_shape": [
+                  1,
+                  12
+                ]
+              },
+              {
+                "query_start_loc_length": 3,
+                "status": "pass",
+                "output_shape": [
+                  2,
+                  12
+                ]
+              }
+            ]
+          }
+        ],
+        "interpretation": {
+          "buffer_capacity_alignment_hypothesis_supported": true,
+          "full_inductor_service_verified": false
+        }
+      }
+    },
+    "GDN_reshape": {
+      "source_files": [
+        "qwen3.8-flash-next-vllm-fp8-gdn-reshape-probe.json"
+      ],
+      "scope": "CPU small-tensor Dynamo probe; remote patch retest pending in source record",
+      "raw": {
+        "date": "2026-10-18",
+        "probe": "gdn_dynamic_token_reshape_cpu_dynamo",
+        "model_weights_loaded": false,
+        "torch_version": "2.12.0+git6bbd260",
+        "shape_config": {
+          "num_v_heads": 48,
+          "tp_size": 1,
+          "local_value_heads": 48,
+          "head_v_dim": 128
+        },
+        "cases": [
+          {
+            "expression": "reshape(N, -1, 128)",
+            "tokens": 3,
+            "status": "fail",
+            "error_type": "UserError",
+            "error": "Could not guard on data-dependent expression Ne(128*u0, 0)"
+          },
+          {
+            "expression": "reshape(N, 48, 128)",
+            "tokens": 3,
+            "status": "pass",
+            "output_shape": [
+              3,
+              48,
+              128
+            ]
+          },
+          {
+            "expression": "reshape(N, 48, 128)",
+            "tokens": 5,
+            "status": "pass",
+            "output_shape": [
+              5,
+              48,
+              128
+            ]
+          }
+        ],
+        "original_pass": false,
+        "explicit_pass": true,
+        "candidate_supported": true,
+        "remote_source_inspection": {
+          "class": "QwenGatedDeltaNetAttention",
+          "method": "forward_cuda",
+          "method_lines": [
+            895,
+            970
+          ],
+          "target_line": 945,
+          "exact_original_expression_occurrences_in_file": 3,
+          "target_expression_occurrences_in_forward_cuda": 1,
+          "matching_output_shape_expression_in_same_method": "self.num_v_heads // self.tp_size, self.head_v_dim",
+          "configured_num_v_heads": 48,
+          "configured_tp_size": 1,
+          "configured_head_v_dim": 128,
+          "patch_scope": "forward_cuda method only; no global replacement"
+        },
+        "remote_patch_application": {
+          "status": "applied",
+          "patch_rc": 0,
+          "method": "QwenGatedDeltaNetAttention.forward_cuda",
+          "backup": "/mnt/workspace/artifacts/qwen3.8-flash-next-vllm/vllm0310-20261017/venv-vllm-0310/lib/python3.12/site-packages/vllm/model_executor/layers/mamba/gdn/qwen_gdn_linear_attn.py.pre-explicit-gdn-heads.20261018-133406.bak",
+          "weights_loaded_during_patch": false,
+          "full_service_retest": "pending"
+        },
+        "scope_and_limits": [
+          "CPU small-tensor Dynamo probe only; it does not validate AMD Inductor/AOT or the complete vLLM model graph.",
+          "Positive token lengths 3 and 5 were tested; zero-token serving behavior was not tested.",
+          "The result supports a localized explicit-head reshape candidate but does not establish a full-service fix."
+        ],
+        "next_step": "Inspect the exact reshape context and local head-count configuration in the persistent remote vLLM source before making a reversible method-scoped patch."
+      }
+    }
+  }
+}
