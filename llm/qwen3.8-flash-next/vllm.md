@@ -48,7 +48,7 @@ hf download Qwen/Qwen3.8-Flash-Next-FP8 \
 3. **目标：在当前实例上获得可用的 vLLM 安装。** 尝试沿用当前 ROCm 7.2.3、`gfx942` 环境，从源码构建 vLLM 0.30.0 并生成 wheel；结果是原生扩展可以导入，但 EngineCore 在 600 秒内没有 ready，HTTP 端口未监听，启动超时并出现 `Timed out waiting for engine core processes to start`。
 4. **目标：解决 0.30.0 的启动超时并完成模型服务启动。** 升级并重新编译 vLLM 0.31.0 后，eager 基线可以启动；默认 compiled 路径最初在 Torch Dynamo 的 PLE/GDN 动态形状处理中失败。后续通过固定 PLE 输入 buffer 形状、移除 `query_start_loc` / `ngram_context` 的动态维声明、并将 GDN reshape 的 `-1` 改为显式 head 数，O1 与 O2 compiled 服务均启动并通过健康检查和请求测试。
 
-因此，当前应将部署结果理解为：**vLLM 0.31.0 + ROCm 7.2.3 的源码构建和补丁后的 O1/O2 compiled 部署均已验证；eager 仅保留为早期功能回退基线，当前性能测评使用 O2。**
+因此，当前应将部署结果理解为：**vLLM 0.31.0 + ROCm 7.2.3 的源码构建和补丁后的 O1/O2 compiled 部署均已验证；本项目推荐 O2 作为默认服务启动与性能测评配置，O1 保留为编译档位对照，eager 仅作为早期功能回退基线。**
 
 ### 其他已知问题
 
@@ -58,8 +58,8 @@ hf download Qwen/Qwen3.8-Flash-Next-FP8 \
 
 - 使用 Python 3.12.13、Torch `2.12.0+git6bbd260`、HIP `7.2.53211`、Triton `3.7.1`。
 - 使用 vLLM `0.31.0+rocm723` 源码构建；Qwen3.8-Flash-Next 的 131 个 Safetensors 分片能够完成加载，FP8 权重实际使用 `torch.float8_e4m3fn`。
-- eager 与补丁后的 O1/O2 compiled 路径均完成启动；O1/O2 未使用 `--enforce-eager`，`/health` 返回 200，`/v1/models` 可查询，聊天请求及 E1–E3 已完成的请求矩阵成功。
-- eager 是早期故障隔离/功能回退基线；当前性能主线使用 O2。O1 留作已验证的编译档位对照。
+- eager 与补丁后的 O1/O2 compiled 路径均完成启动；O1/O2 未使用 `--enforce-eager`，`/health` 返回 200，`/v1/models` 可查询，聊天请求及 E1–E4 测评均已完成。2026-10-18 实例重启后，持久环境/补丁预检通过，O2 服务再次启动并通过 health、models、chat 冒烟验证。
+- eager 是早期故障隔离/功能回退基线；当前推荐默认启动和性能主线使用 O2。O1 留作已验证的编译档位对照。
 - 最近一次关键配置修复：从 Qwen4Exp AMD `support_torch_compile` 的 `dynamic_arg_dims` 移除 `query_start_loc` 和 `ngram_context`，令固定容量的 PLE 输入不再被错误声明为动态维。
 - 冒烟响应中出现可见的 `</think>` 和前置提示词痕迹，接口可用性已通过，但后续质量测评需要统一处理 reasoning/chat template 的输出格式。
 - 持久目录只保存 vLLM 的虚拟环境、wheel、源码归档、元数据和日志；约 173 GiB 的模型仍留在临时模型目录，不复制到工作区。
@@ -128,9 +128,98 @@ assert vllm.__file__.startswith(sys.prefix)
 PY
 ```
 
-#### 3. 从持久目录启动 eager 功能回退（历史路径）
+#### 3. 推荐默认运行方式：O2 compiled（首次启动与实例重启后）
 
-这段代码不依赖 `/root/tmp` 中的 vLLM 源码或虚拟环境，只依赖持久目录中的绝对 Python 路径；模型仍使用临时模型目录。
+O2 是本项目当前推荐的服务启动路径：使用持久 venv 和已应用补丁的 vLLM 0.31.0，显式设置 `--optimization-level 2`，不加 `--enforce-eager`。该配置已通过启动、health/chat 冒烟和 E1–E4 测评，并在 2026-10-18 的实例重启后再次验证可恢复启动；这是本项目验证后的推荐配置，不代表未打补丁的通用 vLLM 安装也可直接使用。
+
+模型下载步骤见本页前面的“模型下载”。模型目录仍位于临时路径 `/root/tmp`；若实例重启后目录不存在，先按模型下载步骤恢复权重。持久 venv、补丁与服务启动所用的公共环境变量如下：
+
+```bash
+set -euo pipefail
+cd /mnt/workspace/multimodal-deploy
+
+unset BUILD_ROOT SOURCE_VENV
+export ARTIFACT_ROOT=/mnt/workspace/artifacts/qwen3.8-flash-next-vllm
+export PERSIST_ROOT="$ARTIFACT_ROOT/vllm0310-20261017"
+export PERSIST_VENV="$PERSIST_ROOT/venv-vllm-0310"
+export VLLM_PY="$PERSIST_VENV/bin/python"
+export MODEL_DIR=/root/tmp/qwen3.8-flash-next/Qwen3.8-Flash-Next-FP8
+
+export ROCM_HOME=/opt/rocm
+export ROCM_PATH=/opt/rocm
+export PATH="/opt/rocm/bin:/opt/rocm/llvm/bin:$PATH"
+export LD_LIBRARY_PATH="/opt/rocm/lib:${LD_LIBRARY_PATH:-}"
+export PYTORCH_ROCM_ARCH=gfx942
+export VLLM_ENGINE_READY_TIMEOUT_S=1200
+
+test -x "$VLLM_PY"
+test -d "$MODEL_DIR"
+```
+
+首启建议从 E1 配置开始。三个测评单元共用 `--tensor-parallel-size 1`、`--dtype auto`、`--gpu-memory-utilization 0.92`、`--cpu-offload-gb 8`、`--optimization-level 2`；不添加 `--enforce-eager`。上下文和并发按工作负载选择：
+
+| 配置 | `--max-model-len` | `--max-num-seqs` | 用途 |
+|---|---:|---:|---|
+| 首启 / E1 | 8192 | 2 | 首次启动、单请求与上下文扩展基线；三轮启动测量使用此配置 |
+| E2 | 8192 | 8 | 并发 1/2/4/8 测试 |
+| E3 | 65536 | 4 | 长上下文测试 |
+
+```bash
+"$VLLM_PY" -m vllm.entrypoints.openai.api_server \
+  --model "$MODEL_DIR" \
+  --served-model-name qwen3.8-flash-next-fp8 \
+  --host 127.0.0.1 --port 8000 \
+  --tensor-parallel-size 1 --dtype auto \
+  --gpu-memory-utilization 0.92 --cpu-offload-gb 8 \
+  --max-model-len 8192 --max-num-seqs 2 \
+  --optimization-level 2
+```
+
+服务保持在终端 A 运行；在终端 B 执行通用冒烟测试。health 返回 200、模型列表可读且 chat 返回 `finish_reason=stop`，即通过基本服务验证：
+
+```bash
+curl -sS -o /dev/null \
+  -w 'health_http=%{http_code}\n' \
+  http://127.0.0.1:8000/health
+
+curl -sS http://127.0.0.1:8000/v1/models
+echo
+
+curl -sS http://127.0.0.1:8000/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "qwen3.8-flash-next-fp8",
+    "messages": [{"role": "user", "content": "请用一句话说明什么是量化模型。"}],
+    "max_tokens": 64,
+    "temperature": 0
+  }'
+echo
+```
+
+E1–E3 的性能/HBM 参数矩阵和 E4 质量、启动测试见下方“测评”。O1 是已验证的编译档位对照；eager 仅保留为故障回退路径。
+
+**实例重启验证（2026-10-18）**：持久 venv 与补丁预检通过，模型临时目录检查到 131 个 Safetensors 分片；以 O2、`max_model_len=8192`、`max_num_seqs=2` 启动，日志确认 `enforce_eager=False`。重启后 `/health` 返回 200，`/v1/models` 可查询，关闭 thinking 的 chat 请求返回 HTTP 200 且 `finish_reason=stop`。此结果验证了持久运行环境配合已就绪模型目录的恢复启动；模型仍在 `/root/tmp`，不属于持久化数据。
+
+#### 4. O1 compiled 对照启动
+
+先停止 O2 服务。可在设置完第 3 节公共环境变量的同一终端中运行；O1 沿用相同模型、ROCm、端口、dtype、显存和 offload 设置，仅将优化档位改为 1，并使用早期 O1 单请求配置 `max_model_len=1024, max_num_seqs=2`：
+
+```bash
+"$VLLM_PY" -m vllm.entrypoints.openai.api_server \
+  --model "$MODEL_DIR" \
+  --served-model-name qwen3.8-flash-next-fp8 \
+  --host 127.0.0.1 --port 8000 \
+  --tensor-parallel-size 1 --dtype auto \
+  --gpu-memory-utilization 0.92 --cpu-offload-gb 8 \
+  --max-model-len 1024 --max-num-seqs 2 \
+  --optimization-level 1
+```
+
+O1 已在持久 venv 中通过启动和请求验证；日志记录的配置为 Dynamo/Inductor、`PIECEWISE` graph、`dynamic_shapes_config=BACKED`。原始结果见[O1 E1 单请求基线](../../results/llm/qwen3.8-flash-next/qwen3.8-flash-next-vllm-fp8-e1.json)。
+
+#### 5. Eager 功能回退（历史路径）
+
+这段代码不依赖 `/root/tmp` 中的 vLLM 源码或虚拟环境，只依赖持久目录中的绝对 Python 路径；模型仍使用临时模型目录。日常优先使用第 3 节 O2 配置；仅在排障或编译路径不可用时考虑此 eager 回退。
 
 ```bash
 set +e
@@ -173,72 +262,7 @@ server_rc=${PIPESTATUS[0]}
 echo "server exit=$server_rc"
 ```
 
-服务启动后，在另一个终端执行下面的验证命令。`health_http=200`、能够返回模型列表，并且聊天请求返回 `finish_reason=stop`，才算本轮启动冒烟测试通过：
-
-```bash
-curl -sS -o /dev/null \
-  -w 'health_http=%{http_code}\n' \
-  http://127.0.0.1:8000/health
-
-curl -sS http://127.0.0.1:8000/v1/models
-echo
-
-curl -sS http://127.0.0.1:8000/v1/chat/completions \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "model": "qwen3.8-flash-next-fp8",
-    "messages": [
-      {"role": "user", "content": "请用一句话说明什么是量化模型。"}
-    ],
-    "max_tokens": 64,
-    "temperature": 0
-  }'
-echo
-```
-
-#### 4. O1 compiled 启动
-
-O1 已在持久 venv 中通过启动和请求验证，未启用 `--enforce-eager`。原始启动结果：[O1 E1 单请求基线](../../results/llm/qwen3.8-flash-next/qwen3.8-flash-next-vllm-fp8-e1.json)；O1 实际解析配置曾由启动日志核实为 Dynamo/Inductor、`PIECEWISE` graph、`dynamic_shapes_config=BACKED`。O1 启动参数沿用 eager 命令的模型、ROCm 环境、端口、dtype、显存和 offload 设置，只使用 compiled 档位：
-
-```bash
-cd /mnt/workspace/multimodal-deploy
-
-"$VLLM_PY" -m vllm.entrypoints.openai.api_server \
-  --model "$MODEL_DIR" \
-  --served-model-name qwen3.8-flash-next-fp8 \
-  --host 127.0.0.1 --port 8000 \
-  --tensor-parallel-size 1 --dtype auto \
-  --gpu-memory-utilization 0.92 --cpu-offload-gb 8 \
-  --max-model-len 1024 --max-num-seqs 2 \
-  --optimization-level 1
-```
-
-#### 5. O2 compiled 启动（当前性能测试配置）
-
-当前性能测评使用 O2，服务从持久 venv 启动，模型权重仍从临时目录读取；不加 `--enforce-eager`。E1 的长上下文配置是 `max_model_len=8192, max_num_seqs=2`；E2 是 `8192, 8`；E3 是 `65536, 4`。以下示例为 E2：
-
-三个单元共用的启动超参数为 `--tensor-parallel-size 1`、`--dtype auto`、`--gpu-memory-utilization 0.92`、`--cpu-offload-gb 8`、`--optimization-level 2`；不添加 `--enforce-eager`。各单元仅按测评负载调整上下文上限与最大并发序列数：
-
-| 测评单元 | `--max-model-len` | `--max-num-seqs` | 用途 |
-|---|---:|---:|---|
-| E1 | 8192 | 2 | 单请求及上下文扩展基线；本次启动时间探针也使用此配置 |
-| E2 | 8192 | 8 | 并发 1/2/4/8 测试 |
-| E3 | 65536 | 4 | 长上下文测试 |
-
-```bash
-cd /mnt/workspace/multimodal-deploy
-
-"$VLLM_PY" -m vllm.entrypoints.openai.api_server \
-  --model "$MODEL_DIR" \
-  --served-model-name qwen3.8-flash-next-fp8 \
-  --host 127.0.0.1 --port 8000 \
-  --tensor-parallel-size 1 --dtype auto \
-  --gpu-memory-utilization 0.92 --cpu-offload-gb 8 \
-  --max-model-len 8192 --max-num-seqs 8 \
-  --optimization-level 2
-```
-
-O1、O2 均为编译服务；`--compilation-config '{"mode":0}'` 是早期诊断配置，不等同于 O1/O2 或严格 eager。vLLM 从持久目录启动已验证，但模型仍位于 `/root/tmp`，实例重建后若该临时目录丢失需重新下载模型。性能结果及启动耗时说明见下方“测评”和附录。
+O1、O2 均为编译服务；`--compilation-config '{"mode":0}'` 是早期诊断配置，不等同于 O1/O2 或严格 eager。服务使用持久 venv 和补丁源码启动，模型仍位于 `/root/tmp`，实例重建后若该临时目录丢失需按前文步骤重新下载模型。性能结果及启动耗时说明见下方“测评”和附录。
 
 ## 测评
 
