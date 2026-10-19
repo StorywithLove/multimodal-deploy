@@ -500,13 +500,13 @@ O1 初次编译时，`query_start_loc.size()[0]` 被标记为动态维，却在 
 
 ### 最终补丁组合
 
-补丁脚本留在仓库 `llm/qwen3.8-flash-next/patches/`，实际修改应用于持久 venv 的安装源码：
+补丁脚本留在仓库 `llm/qwen3.8-flash-next/vllm-patches/`，实际修改应用于持久 venv 的安装源码：
 
-1. [PLE 固定 buffer 补丁](patches/apply_qwen4exp_amd_fixed_ple_buffers.py)：常规与 dummy 路径传递全尺寸固定 `query_start_loc` / `ngram_context` buffer，并填充 padding 尾部，避免输入 shape 随请求数变化。
-2. [PLE 静态维声明补丁](patches/apply_qwen4exp_amd_static_ple_dims.py)：从 `Qwen4ExpModel` 的 `dynamic_arg_dims` 移除 `query_start_loc` 与 `ngram_context`；其余动态维声明保留。
-3. [GDN 显式 head reshape 补丁](patches/apply_gdn_forward_cuda_explicit_heads.py)：仅在 `QwenGatedDeltaNetAttention.forward_cuda` 中，将 reshape 的 `-1` 改成 `self.num_v_heads // self.tp_size`。CPU Dynamo 探针中，原式失败，显式 head 数在 token 数 3、5 时均通过。
+1. [PLE 固定 buffer 补丁](vllm-patches/apply_qwen4exp_amd_fixed_ple_buffers.py)：常规与 dummy 路径传递全尺寸固定 `query_start_loc` / `ngram_context` buffer，并填充 padding 尾部，避免输入 shape 随请求数变化。
+2. [PLE 静态维声明补丁](vllm-patches/apply_qwen4exp_amd_static_ple_dims.py)：从 `Qwen4ExpModel` 的 `dynamic_arg_dims` 移除 `query_start_loc` 与 `ngram_context`；其余动态维声明保留。
+3. [GDN 显式 head reshape 补丁](vllm-patches/apply_gdn_forward_cuda_explicit_heads.py)：仅在 `QwenGatedDeltaNetAttention.forward_cuda` 中，将 reshape 的 `-1` 改成 `self.num_v_heads // self.tp_size`。CPU Dynamo 探针中，原式失败，显式 head 数在 token 数 3、5 时均通过。
 
-仅扩大 `padded_buffer` 的实验补丁 [vllm0310-amd-ple-min-requests-2.patch](patches/vllm0310-amd-ple-min-requests-2.patch) 单独应用后仍失败，不是最终解法。`mode=0` 是关闭 Torch Dynamo、仍保留部分 decode graph 的诊断路径，不等同 O1/O2 或 `--enforce-eager`。
+仅扩大 `padded_buffer` 的实验补丁 [vllm0310-amd-ple-min-requests-2.patch](vllm-patches/vllm0310-amd-ple-min-requests-2.patch) 单独应用后仍失败，不是最终解法。`mode=0` 是关闭 Torch Dynamo、仍保留部分 decode graph 的诊断路径，不等同 O1/O2 或 `--enforce-eager`。
 
 ### 最终验证与边界
 
