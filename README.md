@@ -10,7 +10,7 @@
 
 - 根目录负责项目级索引、公开边界和共享测评方法。
 - 语言模型路线的具体主线与框架选择见 [llm/README.md](llm/README.md)。
-- Qwen3.8-Flash-Next 的 UD-Q4_K_XL GGUF / llama.cpp 部署步骤、异常处理和实验待办见 [llama.cpp.md](llm/qwen3.8-flash-next/llama.cpp.md)；原生 FP8 Safetensors / vLLM 的构建与启动记录见 [vllm.md](llm/qwen3.8-flash-next/vllm.md)，SGLang 使用独立的后端文档。
+- Qwen3.8-Flash-Next 的 UD-Q4_K_XL GGUF / llama.cpp 部署步骤、异常处理和实验待办见 [llama.cpp.md](llm/qwen3.8-flash-next/llama.cpp.md)；原生 FP8 Safetensors 的 vLLM 与 SGLang 部署记录分别见 [vllm.md](llm/qwen3.8-flash-next/vllm.md) 和 [sglang.md](llm/qwen3.8-flash-next/sglang.md)。
 - 统一测评器只连接已启动的 OpenAI-compatible 服务，配置、脚本和结果之间的关系见 [benchmarks/README.md](benchmarks/README.md)。
 
 ## 仓库结构
@@ -60,8 +60,8 @@ multimodal-deploy/
 </thead>
 <tbody>
 <tr>
-<td rowspan="2">语言</td>
-<td rowspan="2">Qwen3.8-Flash-Next</td>
+<td rowspan="3">语言</td>
+<td rowspan="3">Qwen3.8-Flash-Next</td>
 <td>UD-Q4_K_XL / GGUF + llama.cpp</td>
 <td>文本 LLM 推理与服务</td>
 <td>llama.cpp E1–E4 已完成</td>
@@ -74,6 +74,13 @@ multimodal-deploy/
 <td>vLLM E1–E4 已完成</td>
 <td>AMD MI300X 192GB / ROCm 7.2.3</td>
 <td><a href="llm/qwen3.8-flash-next/vllm.md">vLLM</a></td>
+</tr>
+<tr>
+<td>FP8 Safetensors + SGLang</td>
+<td>文本 LLM 推理与服务</td>
+<td>SGLang E1–E4 已完成</td>
+<td>AMD MI300X 192GB / ROCm 7.2.3</td>
+<td><a href="llm/qwen3.8-flash-next/sglang.md">SGLang</a></td>
 </tr>
 <tr>
 <td>视频</td>
