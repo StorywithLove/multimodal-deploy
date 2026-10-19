@@ -16,7 +16,7 @@
 - **构建坑点：**editable 安装曾因缺少 `cargo` 失败；当前仅测文本模型，设置 `SGLANG_BUILD_RUST_EXTS=none`。
 - **检查坑点：**复制的 vLLM 包会让全环境 `pip check` 报依赖冲突；以 SGLang/Torch/HIP 导入、设备检查、`/health`、`/v1/models` 和 chat 冒烟为准。
 - **推理坑点：**Mamba state 用 BF16；旧 dtype 只分配 4 个 slots、少于每请求所需的 5 个；BF16 配置有 10 slots。32768 下 AITER 会折减静态显存预算并导致缓存池初始化失败，显式使用 Triton 后启动成功，KV pool 为 31488 tokens。
-- **成功基线：**SGLang 0.5.21、Python 3.12.13、Torch 2.12.0+git6bbd260、HIP 7.2.53211、`gfx942`；E1–E4 serving/质量结果已齐，E4 启动就绪时间待补。
+- **成功基线：**SGLang 0.5.21、Python 3.12.13、Torch 2.12.0+git6bbd260、HIP 7.2.53211、`gfx942`；E1–E4 serving/质量结果及 E4 三轮启动就绪时间均已完成。
 
 结果与日志统一写入项目目录：`/mnt/workspace/multimodal-deploy/results/llm/qwen3.8-flash-next`。venv 与 SGLang 源码放在持久目录 `/mnt/workspace/artifacts/qwen3.8-flash-next-sglang`；模型权重仍在 `/root/tmp`，本次环境迁移不包含权重。安装细节见下方各步。部署时先执行第 0 步一次，再在同一个窗口依次运行后续步骤；失败恢复时保留当前 Shell 与变量。
 
