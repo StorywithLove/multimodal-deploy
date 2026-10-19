@@ -3,7 +3,7 @@
 - 硬件：AMD Instinct MI300X 192GB，ROCm 7.2.3，`gfx942`
 - 权重：`Qwen/Qwen3.8-Flash-Next-FP8`，复用 vLLM 已下载目录
 - 端口：`127.0.0.1:30000`
-- 状态：MI300X 上 FP8 服务启动、健康检查与单请求冒烟通过；E1、E2 已完成；E3 的 Triton 8192/32768 单并发测评完成，65536 本轮未测（当前 KV pool 容量不足）；E4 Mini-8 与 3 轮启动就绪时间均已完成；现有 `/root/tmp` 环境待迁移至持久 artifacts
+- 状态：MI300X 上 FP8 服务启动、健康检查与单请求冒烟通过；E1、E2 已完成；E3 的 Triton 8192/32768 单并发测评完成，65536 本轮未测（当前 KV pool 容量不足）；E4 Mini-8 与 3 轮启动就绪时间均已完成；SGLang venv 与源码已迁移至 artifacts，并从持久路径启动、完成 health/chat 冒烟；模型权重仍在 `/root/tmp`
 
 官方 Qwen 配方要求使用包含该模型支持的 SGLang 构建（至少 `v0.5.20`），并建议使用 `--reasoning-parser auto`；该模型始终保留 reasoning。[官方配方](https://github.com/sgl-project/sglang/blob/main/docs/cookbook/autoregressive/Qwen/Qwen3.8-Flash-Next.mdx)
 
@@ -293,7 +293,7 @@ PY
 fi
 ```
 
-迁移验证通过后，启动/测评命令均使用 `$SGLANG_VENV/bin/python` 和 `$SGLANG_SRC` 的 artifacts 路径。首次确认持久目录能正常启动服务后，再考虑清理临时副本；全新重建则从第 0–6 步开始，步骤已直接指向持久目录，无需再做上述迁移。
+持久化复核已通过：使用 artifacts 下的 venv 与 editable 源码启动服务，并完成 `/health`、`/v1/models` 与 chat 冒烟。模型权重仍位于 `/root/tmp`，不在本次环境/源码迁移范围内；确认权重可持久保存或可重新获取前，不要清理权重目录。后续启动/测评均使用 `$SGLANG_VENV/bin/python` 和 `$SGLANG_SRC` 的 artifacts 路径；全新重建则从第 0–6 步开始，步骤已直接指向持久目录。
 
 ## 启动服务
 
@@ -345,6 +345,7 @@ curl -fsS http://127.0.0.1:30000/v1/chat/completions \
 | 旧参数启动 | ❌ FP8 权重 131/131 加载成功；Mamba state cache 4 slots、每请求需 5，有效请求数 0 |
 | BF16 单并发启动 | ✅ 131/131 shard，加载 59.01 秒；权重占用 170.55 GB，随后 Mamba cache 10 slots（SSM 0.58 GB）、KV cache 31488 tokens；CUDA graph 后可用显存 18.58 GB，`cpu_offload_gb=0` |
 | `/health`、`/v1/models` 与冒烟 | ✅ 健康检查无报错；模型 ID 正确、`max_model_len=8192`；聊天请求 HTTP 200，返回一句话文本与非空 `reasoning_content`，`finish_reason=stop`（59 prompt / 67 completion tokens） |
+| artifacts 持久环境启动复核（2026-10-19） | ✅ 日志确认 SGLang 源码与 venv 均从 `/mnt/workspace/artifacts/qwen3.8-flash-next-sglang` 加载；131/131 shard，Mamba 10 slots、KV cache 31488 tokens；`/v1/models` 返回模型 ID 与 `max_model_len=8192`，chat HTTP 200（59 prompt / 69 completion tokens），有 `reasoning_content` 且 `finish_reason=stop`。本次模型权重仍从 `/root/tmp` 加载。 |
 
 以上启动与冒烟数据来自 AMD 实例的输出；原始日志与 JSON 在远端 `$RESULT_DIR`。日志中的 `rope_parameters` 未识别警告及可选 `cutlass`/`torchcodec` 导入提示未阻止文本冒烟；缺少 `torchcodec` 会影响音频输入。
 
