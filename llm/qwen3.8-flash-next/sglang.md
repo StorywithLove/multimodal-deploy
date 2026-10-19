@@ -5,6 +5,10 @@
 - 端口：`127.0.0.1:30000`
 - 状态：MI300X 上 FP8 服务启动、健康检查与单请求冒烟通过；E1、E2 已完成；E3 的 Triton 8192/32768 单并发测评完成，65536 本轮未测（当前 KV pool 容量不足）；E4 Mini-8 与 3 轮启动就绪时间均已完成；SGLang venv 与源码已迁移至 artifacts，并从持久路径启动、完成 health/chat 冒烟；模型权重仍在 `/root/tmp`
 
+## 模型下载
+
+SGLang 与 vLLM 使用同一份 `Qwen3.8-Flash-Next-FP8` 权重，模型目录为 `/root/tmp/qwen3.8-flash-next/Qwen3.8-Flash-Next-FP8`。下载命令、ModelScope 首选方式及 Hugging Face 备用方式见 [vLLM 文档的模型下载章节](https://github.com/StorywithLove/multimodal-deploy/blob/main/llm/qwen3.8-flash-next/vllm.md)。模型文件约 173 GiB；若实例重启后临时目录丢失，按链接中的步骤重新下载。
+
 官方 Qwen 配方要求使用包含该模型支持的 SGLang 构建（至少 `v0.5.20`），并建议使用 `--reasoning-parser auto`；该模型始终保留 reasoning。[官方配方](https://github.com/sgl-project/sglang/blob/main/docs/cookbook/autoregressive/Qwen/Qwen3.8-Flash-Next.mdx)
 
 ## 部署与检查（AMD/ROCm 专用）
