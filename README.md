@@ -71,7 +71,7 @@ multimodal-deploy/
 <tr>
 <td>FP8 Safetensors + vLLM</td>
 <td>文本 LLM 推理与服务</td>
-<td>vLLM 部署及 E1–E3 测评已完成；O1/O2 compiled 启动验证通过，包含本地 PLE/GDN 兼容补丁；E4 待补</td>
+<td>vLLM E1–E4 已完成</td>
 <td>AMD MI300X 192GB / ROCm 7.2.3</td>
 <td><a href="llm/qwen3.8-flash-next/vllm.md">vLLM</a></td>
 </tr>
