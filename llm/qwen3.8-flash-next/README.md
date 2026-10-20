@@ -98,6 +98,14 @@ SGLang 的 FP8 启动就绪实测快于 vLLM（中位数约 91 秒对 202 秒）
 
 E4 验证了接口和输出流程可用，不构成回答质量排名。跨后端质量对比需要固定 thinking 设置、输出上限和评分方法。
 
+## 后续优化方向：图片理解
+
+本轮 E1–E4 覆盖的是文本请求，未验证图片理解。虽然 [GGUF 模型卡](https://huggingface.co/unsloth/Qwen3.8-Flash-Next-GGUF) 和 [FP8 模型卡](https://huggingface.co/Qwen/Qwen3.8-Flash-Next-FP8)标注支持视觉输入，部署时仍需确认视觉组件、后端接口和图文请求格式均可用。后续可单独建立统一图片集进行接口探测与质量测试；该项不属于本轮文本性能结论。
+
+- llama.cpp：GGUF 路线需配套视觉投影文件（mmproj）并通过 `--mmproj` 加载。
+- vLLM / SGLang：用兼容的图文消息格式发送图片，验证当前 FP8 部署。
+- Ollama：当前导入 tag 未报告 `vision` 能力，需先确认该 GGUF 路线的视觉导入方式。
+
 ## 当前选择边界
 
 - **低显存部署**：llama.cpp + Q4 是当前数据最明确的选择。
