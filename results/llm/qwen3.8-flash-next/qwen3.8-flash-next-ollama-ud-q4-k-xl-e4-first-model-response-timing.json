@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "metric": "first_model_request_wall_time",
+  "cache_state": "uncontrolled",
+  "curl_exit_code": 0,
+  "request_wall_s": 82.471346843,
+  "load_duration_ns": 80949586375,
+  "total_duration_ns": 82448066481,
+  "prompt_eval_count": 60,
+  "eval_count": 32,
+  "done": true
+}
