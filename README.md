@@ -1,6 +1,6 @@
 # Inference Engineering Portfolio / 推理工程作品集
 
-面向 AMD MI300X / ROCm 的模型部署与推理测评作品集。这里记录已经验证的部署路径、关键实测结果、共用测评工具和工程经验。
+覆盖 AMD MI300X / ROCm 推理测评、模型平台 API 实践与国产 GPU 云端部署的推理工程作品集。这里记录已经验证的部署路径、关键实测结果、共用测评工具和工程经验，并提供文本、图像、语音、OCR 与向量检索的实践入口。
 
 项目按模态与任务组织，具体模型放在相应主题下；后续增加模型时沿用相同的阅读结构。这里展示项目概览，语言模型分支保留更多比较数据，各模型项目页记录完整测试细节。
 
@@ -13,12 +13,37 @@
 | `docs/runs/` | 可复现实验的运行记录和过程说明。 |
 | `lessons/` | 推理部署、调试与工程实践的学习笔记。 |
 | `llm/` | 语言模型部署路线、模型索引、测试概要和各模型详细记录。 |
-| `platforms/` | ModelScope 与 Hugging Face 等模型平台的 API 调用、数据集实践和平台能力探索；与本地推理框架部署记录分开。 |
+| `platforms/` | ModelScope、Hugging Face 的 API 调用、数据集实践与能力探索，以及模力方舟 / 沐曦的多模态云端部署、API 服务和排障记录。 |
 | `results/` | 结构化基准结果和实验输出，不存放模型权重。 |
 | `video/` | 视频模型的部署脚本、配置和运行记录。 |
 | `vision/` | 图片与视觉模型的路线规划和相关实践。 |
 
-`platforms/` 按平台划分：`platforms/modelscope/` 与 `platforms/huggingface/` 各自维护 `model_inference/`（在线推理调用示例）、`datasets/`（数据集处理与微调实践）和 `capabilities/`（平台专区及模型能力边界记录）。模型调用脚本按模型命名；共享 API 调用模板使用描述性名称。
+`platforms/` 按平台划分：`platforms/modelscope/` 与 `platforms/huggingface/` 各自维护 `model_inference/`（在线推理调用示例）、`datasets/`（数据集处理与微调实践）和 `capabilities/`（平台专区及模型能力边界记录）；`platforms/moark/metax/` 按考试主题记录沐曦云端模型部署与服务化实践。模型调用脚本按模型命名；共享 API 调用模板使用描述性名称。
+
+## 模型平台与国产算力实践
+
+完整入口见 [平台索引](platforms/README.md)。
+
+| 平台 | 功能与记录 |
+|---|---|
+| [ModelScope](platforms/modelscope/README.md) | 模型推理 API 调用示例、数据集实践和平台能力记录。 |
+| [Hugging Face](platforms/huggingface/README.md) | 模型推理 API、数据集及 Hub 平台能力探索。 |
+| 模力方舟 / 沐曦 | 厂商适配环境下的单次推理、OpenAI 风格 API、产物保存和排障；六类主题入口如下。 |
+
+### 模力方舟 / 沐曦
+
+2026-10-22 已取得沐曦 L1 认证（用户确认）。六份文档保留各阶段的原始证据边界；认证通过不替代单项运行日志或统一性能测评。
+
+| 主题 | 模型与功能 | 部署记录 |
+|---|---|---|
+| 文本生成 | Qwen3-0.6B、Qwen3-8B；Transformers 单次推理、vLLM API、SSH 隧道与模型名匹配 | [文本生成模型](platforms/moark/metax/文本生成模型.md) |
+| 图像生成 | Z-Image-Turbo、Qwen-Image-2512；Diffusers 生图、KV Cache 绕过、系统内存 OOM 排障 | [图形生成模型](platforms/moark/metax/图形生成模型.md) |
+| 语音识别 | Whisper、Qwen3-ASR-1.7B；音频转写、文本保存、FastAPI 上传识别 | [语音识别模型](platforms/moark/metax/语音识别模型.md) |
+| 语音合成 | IndexTTS2、Qwen3-TTS Base；参考音频克隆、WAV 保存、base64 API 与采样率处理 | [语音合成模型](platforms/moark/metax/语音合成模型.md) |
+| OCR | PaddleOCR-VL 示例跑通；FireRed-OCR 单次识别与上传 API 代码已整理，未归档运行结果 | [OCR模型](platforms/moark/metax/OCR模型.md) |
+| 向量检索与重排 | Qwen3-Embedding-8B、Chroma、bge-reranker-v2-m3；1024 维接口、22 片入库及 Top-10 重排 | [部署向量化模型与向量数据库的使用](platforms/moark/metax/部署向量化模型与向量数据库的使用.md) |
+
+这些记录同时覆盖预置模型目录核查、依赖与镜像匹配、模型管道选择、端口管理和 API 验收。不同硬件、精度和任务的结果分别记录，不直接混入下文 MI300X 的 E1–E4 框架测评。
 
 ## 推理引擎与部署流程
 
@@ -28,7 +53,7 @@
 |---|---|---|
 | llama.cpp | 直接读取 GGUF；由 `llama-server` 加载模型并提供推理 API | `llama-server -m <模型.gguf>` → 加载权重与运行环境 → 服务就绪 |
 | Ollama | 服务进程管理模型；本项目的 GGUF 路线通过 Modelfile 登记模型，并由 llama.cpp runner 推理 | `ollama serve` → `Modelfile` 指向 GGUF → `ollama create` 导入 → `ollama run` 或 API 首次请求时加载模型 |
-| vLLM | 以模型仓库或本地检查点启动 serving engine；本项目使用 FP8 Safetensors | `vllm serve <模型仓库或路径>` → 加载权重并初始化引擎 → API 服务就绪 |
+| vLLM | 以模型仓库或本地检查点启动 serving engine；MI300X 路线使用 FP8 Safetensors，沐曦实践另含 BF16 文本与池化模型 | `vllm serve <模型仓库或路径>` → 加载权重并初始化引擎 → API 服务就绪 |
 | SGLang | 以模型仓库或本地检查点启动 serving engine；本项目使用 FP8 Safetensors | `python -m sglang.launch_server --model-path <模型仓库或路径>` → 加载权重并初始化引擎 → API 服务就绪 |
 
 llama.cpp 直接从 GGUF 文件启动；Ollama 在推理前增加服务管理、模型登记和导入步骤，`ollama serve` 就绪不代表模型已经加载，通常要等首次 `run` 或 API 请求。vLLM 与 SGLang 则在启动 serving engine 时加载模型并进行运行时初始化。因而比较启动时间时，应把 Ollama 的服务启动、一次性导入、模型冷加载分开记录；并注明 GGUF Q4/Q5 与 FP8 Safetensors 的精度差异。当前项目的结果代表端到端部署路线取舍，不是单独的推理引擎排名。
@@ -71,7 +96,7 @@ llama.cpp 直接从 GGUF 文件启动；Ollama 在推理前增加服务管理、
 
 ## 图片与视觉
 
-当前处于路线规划阶段。后续确定模型和任务后，会在本节下增加对应模型介绍。模块说明见 [vision/README.md](vision/README.md)。
+`vision/` 模块仍处于路线规划阶段，见 [vision/README.md](vision/README.md)。已完成的模力方舟 / 沐曦生图实践记录在 [图形生成模型](platforms/moark/metax/图形生成模型.md)，OCR 方案与证据边界见 [OCR模型](platforms/moark/metax/OCR模型.md)。
 
 ## 共用测评与记录
 
