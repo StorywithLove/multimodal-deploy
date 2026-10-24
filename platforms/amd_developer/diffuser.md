@@ -17,7 +17,7 @@
 
 ## 2. 潜在扩散模型
 
-以下以采用 CLIP 和 U-Net 的经典 Stable Diffusion 为例，不代表所有图像或视频生成模型。
+以下以采用 CLIP 和 U-Net 的经典 Stable Diffusion 为例，通过在多个时间步中基于提示优化初始化的随机噪声来逐步提升图像质量。
 
 ```text
 提示词 → 分词器 → CLIP 文本编码器 → 文本条件
@@ -27,20 +27,92 @@
                                  VAE 解码 → 图像
 ```
 
-### 2.1 文本条件
+![Stable Diffusion 各组件与张量尺寸](https://jalammar.github.io/images/stable-diffusion/stable-diffusion-components-and-tensors.png)
 
-CLIP 将文本编码为去噪网络使用的条件表示。CLIP 训练对齐文本和图像表示；生成时使用的文本条件不宜简单等同于一个相似度向量。
+图示以 SD 1.x 的 512 × 512 输出为例：文本表示为 77 × 768，潜变量为 4 × 64 × 64；这些尺寸不是所有模型的统一规格。
 
-### 2.2 VAE 与潜空间
+本文配图来自 Jay Alammar 的 [The Illustrated Stable Diffusion](https://jalammar.github.io/illustrated-stable-diffusion/)，按原文 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) 许可署名引用，通过原站链接加载。
 
-VAE 编码器将真实图像压缩为潜变量，解码器将潜变量还原到像素空间。文生图通常直接从潜空间随机噪声开始，不需要先用 VAE 编码纯噪声；图生图则先编码输入图像，再加噪和去噪。
+### 2.1 文本表示生成
+（1）分词。基于tokenizer实现。
+（2）编码。CLIP 将文本编码为去噪网络使用的条件表示。CLIP（Contrastive Language-Image Pretraining）"语言-图像对比与训练"包含一个图片编码器和一个文本编码器，将两者的输出训练至一致，因此CLIP处理输入文本得到类似图片输入的嵌入向量。
 
-### 2.3 迭代去噪
+### 2.2 图像表示精炼
 
-U-Net 根据当前潜变量、时间步和文本条件预测噪声，调度器据此更新潜变量。重复采样后，由 VAE 解码得到图像。不同架构的预测目标可能不同。模型会不断修改整组数值，而不是删除某些噪点。
+![先编码原图，再向潜变量加入不同程度的噪声](https://jalammar.github.io/images/stable-diffusion/stable-diffusion-latent-forward-process-v2.png)
 
+图中加噪发生在压缩后的潜空间；下面的公式描述如何直接构造指定时间步的训练样本。
+
+（1）训练阶段：加噪。训练程序基于VAE编码后的原图潜变量 $x_0$、噪声 $\epsilon$ 构建题目。每次训练通常**随机选 $t$ 和噪声**，直接构造 $x_t$；加噪过程如下：
+$$
+x_t=\sqrt{\bar{\alpha}_t}\,x_0
++\sqrt{1-\bar{\alpha}_t}\,\epsilon
+\qquad
+\epsilon\sim\mathcal{N}(0,I)
+$$
+其中 $x_0$ 为干净数据，$\epsilon$ 为从标准正态分布采样的噪声，$t$ 为时间步，$\bar{\alpha}_t=\prod_{s=1}^{t}\alpha_s$ 为累计信号保留系数。
+为支持 CFG，训练时通常以一定概率随机丢弃文本条件。对每个样本，随机选择保留条件 $c$ 或替换为空条件 $\varnothing$，记实际使用的条件为 $\tilde c$。同一个 U-Net 因此同时学习有条件和无条件噪声预测；两种情况的目标都是实际加入的噪声 $\epsilon$。
+
+U-Net 基于加噪潜变量 $x_t$、时间步 $t$ 和选定条件 $\tilde c$ 执行一次噪声预测：
+$$
+\hat{\epsilon}=\epsilon_\theta(x_t,t,\tilde c)
+$$
+最后比较 $\epsilon$ 和 $\hat\epsilon$ ，更新模型参数：
+$$
+\mathcal{L}=\mathbb{E}_{x_0,t,\epsilon,\tilde c}\left[\|\epsilon-\epsilon_\theta(x_t,t,\tilde c)\|^2\right]
+$$
+每次训练迭代通常直接构造随机时间步的数据并预测噪声，不执行完整的多步生成，也通常不在此处组合两份 CFG 预测。反向传播更新的是模型参数。
+
+![正向扩散训练样本：向干净数据加入噪声，得到带噪输入](https://jalammar.github.io/images/stable-diffusion/stable-diffusion-forward-diffusion-training-example.png)
+
+可将图中的加噪样例对应到一次训练抽样：随机选择时间步 $t$，采样噪声 $\epsilon$，按前面的公式构造 $x_t$。其中 $t$ 决定信号与噪声的混合比例，实际采样的 $\epsilon$ 保留为预测目标；下图展示预测、计算损失与更新参数的过程。
+
+![U-Net 训练：预测噪声、与真实噪声计算损失，再反向传播更新参数](https://jalammar.github.io/images/stable-diffusion/stable-diffusion-u-net-noise-training-step.png)
+
+这张图用带噪图片直观展示训练逻辑；在 Stable Diffusion 中，实际输入和预测噪声都是潜变量形状的张量。图中的反向传播属于训练阶段，生成时不执行这一步。
+
+（2）生成阶段：预测噪声并迭代移除。基于已经训练好的 U-Net，从随机采样的潜空间噪声开始，每步根据噪声预测更新潜变量，**使其逐步从高噪声状态转向低噪声状态**。完整相邻步采样可写为 $x_T\to x_{T-1}\to\cdots\to x_0$；若只采样 50 步，则通常跨步选取时间位置，并非只从 999 走到 950。生成阶段模型参数固定，每步更新的是潜变量。
+
+![生成过程中不同去噪步骤的潜变量可视化](https://jalammar.github.io/images/stable-diffusion/stable-diffusion-denoising-steps-latents.png)
+
+图示展示生成过程中选取的若干步骤：潜变量经图像解码器可视化后，逐渐呈现轮廓和细节。实际迭代更新发生在潜空间中；为观察过程而解码中间结果，并非每一步生成都必须执行的操作。
+
+① CFG（Classifier-Free Guidance，无分类器引导）：与训练时随机选择条件不同，使用 CFG 的生成过程在每个采样步都对同一个当前潜变量 $x_t$ 和时间步 $t$，分别计算无条件和有条件两份噪声预测（实现时可合并成一次批量前向计算）：
+$$
+\epsilon_u=\epsilon_\theta(x_t,t,\varnothing),
+\qquad
+\epsilon_c=\epsilon_\theta(x_t,t,c)
+$$
+其中 $u$ 表示无文本条件（空提示 $\varnothing$），$c$ 表示有文本条件。然后组合：
+$$
+\hat\epsilon_{\mathrm{CFG},t}=\epsilon_u+s\left(\epsilon_c-\epsilon_u\right)
+$$
+其中 $\epsilon_c-\epsilon_u$ 表示文本条件使噪声预测发生的变化，再以 guidance scale $s$ 加权叠加回无条件噪声预测。两者都是预测张量，不是文本贴合度或图片质量评分。$\hat\epsilon_{\mathrm{CFG},t}$ 是当前步组合后的预测，每个采样步都会重新计算，而非仅最后一步使用。
+
+② 去噪更新。将 $\hat\epsilon_{\mathrm{CFG},t}$ 作为预测噪声，交给采样器更新图像潜变量。
+
+- 调度器（噪声 / 时间步调度）：安排各步的噪声等级及生成时选取的时间位置，决定“在哪些噪声等级之间前进”。
+- 采样器：利用模型预测，按选定的数值更新规则计算下一步潜变量，并决定是否引入额外随机噪声，负责“怎样走到下一步”。
+- 两者配合影响生成速度和结果；术语在不同工具中可能合并，例如 Diffusers 的 scheduler 通常同时封装时间步安排与采样更新。
+
+以下为经典 DDPM 的相邻时间步更新，跨步采样需采用相应采样器与时间步安排所对应的更新公式：
+$$
+x_{t-1}=\frac{1}{\sqrt{\alpha_t}}
+\left(
+x_t-\frac{\beta_t}{\sqrt{1-\bar{\alpha}_t}}\hat\epsilon_{\mathrm{CFG},t}
+\right)
++\sigma_t\eta
+$$
+其中 $\beta_t=1-\alpha_t$；$\eta\sim\mathcal N(0,I)$ 是另外采样的随机噪声，不是 CFG 组合后的预测，末步通常不再加入。每次更新后，用新的潜变量和下一时间步再次执行“分别预测 → CFG 组合 → 采样更新”。
+
+### 2.3 图像上采样
+步骤完成后，Stable Diffusion使用Decoder对图片表示进行上采样。
 - 颜色：像素空间扩散可以直接使用 RGB 三通道噪声；经典 Stable Diffusion 使用四通道潜空间噪声，各通道没有直接的 RGB 含义，最终由 VAE 解码为彩色图像。
 - 分辨率：经典 Stable Diffusion 的潜空间宽、高通常各为输出的 1/8；例如 128 × 128 × 4 的潜变量可解码为 1024 × 1024 × 3 的图像。具体比例取决于模型与 VAE。
+
+![自编码器将图像压缩为潜变量，再由解码器重建图像](https://jalammar.github.io/images/stable-diffusion/stable-diffusion-autoencoder.png)
+
+图中展示的是编码与重建过程。文生图推理从随机潜变量开始，去噪结束后只使用右侧的图像解码器，无需先编码一张原图。
 
 ## 3. 参数与使用技巧
 
@@ -72,6 +144,10 @@ U-Net 根据当前潜变量、时间步和文本条件预测噪声，调度器�
 ## 6. 整理时核对的资料
 
 以下资料用于校正概念，不作为昨日操作完成的证明：
-
+- [CLIP: Connecting text and images](https://openai.com/index/clip/)
 - [Diffusers：管线、模型与调度器](https://huggingface.co/docs/diffusers/using-diffusers/write_own_pipeline)
 - [Stable Diffusion 文生图参数](https://huggingface.co/docs/diffusers/v0.35.0/en/api/pipelines/stable_diffusion/text2img)
+- [Diffusion Explainer：交互演示](https://poloclub.github.io/diffusion-explainer/)
+- [Jay Alammar：图解 Stable Diffusion](https://jalammar.github.io/illustrated-stable-diffusion/)
+- [Denoising Diffusion Probabilistic Models](https://arxiv.org/abs/2006.11239)
+- [Classifier-Free Diffusion Guidance](https://arxiv.org/abs/2207.12598)
