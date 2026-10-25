@@ -1,12 +1,18 @@
-# 多智能体协作：ADK、A2A、CrewAI 与 LangGraph
+# AI 智能体
 
 > AMD AI 学院视频课学习笔记。以采购管家协调汉堡、披萨销售智能体为例，理解智能体框架、通信协议与本地模型服务如何配合。
 >
 > 本文依据课程文字、截图及官方文档整理。截图代码为课程版本片段，不是可直接执行的完整项目；实际依赖与 API 以课程仓库为准。以下内容不代表已经完成实操验证。
 
-## 1. 技术栈：先区分四个层次
+- 学习路径：AMD AI 学院[“AI 智能体”](https://developer.amd.com.cn/academy/learningPaths/483c8079-2dae-4b28-9476-719b7e17ca06)。
+- 视频学习：入门篇、进阶篇均已完成（用户确认）。
+- Notebook 实践：尚未完成，执行结果与产物待归档。
 
-![课程展示的智能体框架](img/agent-frameworks.png)
+## 1. 理论学习
+
+### 1.1 技术栈：先区分四个层次
+
+![课程展示的智能体框架](images/agent-frameworks.png)
 
 课程展示了 PydanticAI、LangGraph、OpenAI Agents SDK、CrewAI 等智能体框架。它们用于组织模型、工具和执行流程；A2A 解决独立智能体之间的通信。
 
@@ -17,11 +23,11 @@
 | 模型服务 | vLLM、Ollama | 加载模型权重并提供推理 API |
 | 硬件与计算环境 | AMD Instinct GPU、EPYC CPU、ROCm 等 | 执行模型计算及应用逻辑 |
 
-![框架、通信协议、硬件与模型服务的分层](img/agent-stack.png)
+![框架、通信协议、硬件与模型服务的分层](images/agent-stack.png)
 
 **Llama 是模型；vLLM 和 Ollama 运行模型；CrewAI 等框架利用模型构建智能体；A2A 让智能体之间协作。**
 
-### 1.1 基本概念
+#### 1.1.1 基本概念
 
 - **AI 智能体（Agent）**：接收输入，结合模型、工具和状态，采取行动以完成目标的程序。
 - **智能体名片（Agent Card）**：描述智能体身份、技能、访问方式等信息的 JSON 元数据文档，是智能体发现机制的基础。
@@ -29,7 +35,7 @@
 
 Google ADK 是开发框架，A2A 是由 Google 发起的通信协议项目，不能理解为“ADK 开发了 A2A”。参与协作的智能体不必采用同一个框架。
 
-## 2. 课程案例：采购管家与销售智能体
+### 1.2 课程案例：采购管家与销售智能体
 
 用户先与采购管家（Root Agent）交互，再由管家协调不同技术栈的销售智能体。
 
@@ -46,17 +52,17 @@ flowchart TD
 
 例如，用户要求“两个芝士汉堡和一个披萨”：采购管家协调两个销售智能体，各自处理菜单、规格和订单信息，再返回结果。这里是案例的职责划分，不代表仅凭截图片段就已实现全部流程。
 
-### 2.1 自托管技术栈的意义
+#### 1.2.1 自托管技术栈的意义
 
 - **数据控制**：可让推理在自己的环境中完成，但是否外发数据仍取决于外部工具、日志、遥测和部署配置，不能直接称为“绝对隐私”。
 - **深度定制**：可以调整模型、提示词及工具，必要时对模型微调。
 - **成本与性能优化**：根据模型大小、并发及硬件选择方案；自托管仍有硬件与运维成本。
 
-## 3. 汉堡智能体：CrewAI + vLLM
+### 1.3 汉堡智能体：CrewAI + vLLM
 
-### 3.1 CrewAI 定义角色、目标和工具
+#### 1.3.1 CrewAI 定义角色、目标和工具
 
-![CrewAI 汉堡智能体连接本地 vLLM 服务](img/agent-crewai-vllm.png)
+![CrewAI 汉堡智能体连接本地 vLLM 服务](images/agent-crewai-vllm.png)
 
 | 配置 | 作用 |
 | --- | --- |
@@ -67,7 +73,7 @@ flowchart TD
 
 模型负责理解请求、生成回答或提出工具调用；订单工具负责执行实际业务。模型回答“下单成功”不代表订单已写入系统，必须核对工具执行结果。
 
-### 3.2 模型标识不等于文件目录
+#### 1.3.2 模型标识不等于文件目录
 
 课程配置片段：
 
@@ -84,7 +90,7 @@ api_base="http://localhost:8088/v1"
 
 不需要创建名为 `hosted_vllm` 的模型文件夹。模型文件由 vLLM 服务端加载，CrewAI 通过 HTTP 调用服务。[vLLM 与 LiteLLM 集成说明](https://docs.vllm.ai/en/latest/deployment/frameworks/litellm/)
 
-### 3.3 先启动模型服务，再连接智能体
+#### 1.3.3 先启动模型服务，再连接智能体
 
 如果课程已经启动模型服务，直接连接即可。自行部署时，可参考以下示意命令：
 
@@ -106,13 +112,13 @@ curl http://localhost:8088/v1/models
 
 `localhost` 指客户端所在的机器或容器。跨机器、隔离容器部署时应使用可达的服务地址。返回模型列表后，仍需验证实际推理与工具调用。
 
-### 3.4 使用 A2A 对外提供汉堡智能体服务
+#### 1.3.4 使用 A2A 对外提供汉堡智能体服务
 
-![课程中的 AgentSkill、AgentCard 与 A2AServer](img/agent-a2a-server.png)
+![课程中的 AgentSkill、AgentCard 与 A2AServer](images/agent-a2a-server.png)
 
 截图中的三个对象分别负责能力描述、名片描述和网络服务。
 
-#### 3.4.1 AgentSkill：描述“我会做什么”
+##### 1.3.4.1 AgentSkill：描述“我会做什么”
 
 | 字段 | 作用 |
 | --- | --- |
@@ -124,11 +130,11 @@ curl http://localhost:8088/v1/models
 
 **技能声明没有实现下单逻辑。** 即使 `id` 与工具函数同名，也不会自动绑定该工具。实际能力由智能体与业务工具实现。[A2A 技能定义](https://a2a-protocol.org/dev/specification/agent-card/)
 
-#### 3.4.2 AgentCard：说明“我是谁、在哪里访问”
+##### 1.3.4.2 AgentCard：说明“我是谁、在哪里访问”
 
 名片汇总智能体身份与访问要求。课程使用 `skills=[skill]` 将技能加入名片，通过 `url` 声明服务地址。调用方据此判断是否适合把任务交给该智能体；声明地址应与实际部署一致。
 
-#### 3.4.3 A2AServer：启动对外接单服务
+##### 1.3.4.3 A2AServer：启动对外接单服务
 
 按截图结构，`BurgerSellerAgent()` 是实际智能体，`AgentTaskManager(...)` 衔接外部任务与执行逻辑，`server.start()` 启动网络服务。任务状态管理的具体行为取决于课程实现。
 
@@ -144,11 +150,11 @@ curl http://localhost:8088/v1/models
 
 > 截图中的 `A2AServer`、`AgentTaskManager` 和名片字段可能来自早期 SDK 或课程封装。截图还将 `0.0.0.0` 写成未加引号的形式，不能直接作为有效 Python 代码复制运行。
 
-## 4. 披萨智能体：LangGraph + Ollama
+### 1.4 披萨智能体：LangGraph + Ollama
 
-### 4.1 LangGraph 组织模型与工具的执行流程
+#### 1.4.1 LangGraph 组织模型与工具的执行流程
 
-![LangGraph 披萨智能体的模型、工具和执行图](img/agent-langgraph-structure.png)
+![LangGraph 披萨智能体的模型、工具和执行图](images/agent-langgraph-structure.png)
 
 | 代码元素 | 作用 |
 | --- | --- |
@@ -160,9 +166,9 @@ curl http://localhost:8088/v1/models
 
 此处 ReAct 可理解为：模型选择行动，工具执行后返回结果，模型再决定继续调用还是回答。`checkpointer` 不等于长期知识库；线程内检查点与跨线程长期存储是不同概念。[LangGraph 官方存储说明](https://github.com/langchain-ai/docs/blob/main/src/oss/langgraph/stores.mdx)
 
-### 4.2 Ollama 管理和运行本地模型
+#### 1.4.2 Ollama 管理和运行本地模型
 
-![ChatOllama 指定 Llama 3.1 模型](img/agent-ollama-model.png)
+![ChatOllama 指定 Llama 3.1 模型](images/agent-ollama-model.png)
 
 ```python
 from langchain_ollama import ChatOllama
@@ -189,9 +195,9 @@ ollama run llama3.1:8b
 
 `ollama run` 在模型不存在时会先拉取模型；`ChatOllama(...)` 本身只是客户端配置，不代表执行下载。课程使用的 `llama3.1:latest` 当前对应默认 8B 模型，显式写 `:8b` 更便于理解；严格复现还需记录模型摘要和量化版本。[模型标签](https://ollama.com/library/llama3.1/tags)、[Ollama 快速入门](https://github.com/ollama/ollama/blob/main/docs/quickstart.mdx)
 
-## 5. Google ADK：会话、状态、记忆和运行时
+### 1.5 Google ADK：会话、状态、记忆和运行时
 
-### 5.1 Session、State、Memory 的区别
+#### 1.5.1 Session、State、Memory 的区别
 
 | 概念 | 含义 | 案例中的例子 |
 | --- | --- | --- |
@@ -201,19 +207,37 @@ ollama run llama3.1:8b
 
 状态的作用域取决于配置：ADK 除会话状态外还提供用户、应用、临时等作用域机制。长期记忆需要配置相应服务与写入、检索流程，并非自动永久记录所有对话。[ADK 会话说明](https://github.com/google/adk-docs/blob/main/docs/sessions/session/index.md)、[状态说明](https://github.com/google/adk-docs/blob/main/docs/sessions/state.md)
 
-### 5.2 Runner 驱动执行
+#### 1.5.2 Runner 驱动执行
 
-![Google ADK Runner、事件循环及服务存储](img/agent-adk-runtime.png)
+![Google ADK Runner、事件循环及服务存储](images/agent-adk-runtime.png)
 
 图中 Runner 负责协调执行：接收输入、取得会话上下文、驱动智能体逻辑，并通过事件流返回执行过程与结果。会话、状态、记忆及产物则交给对应服务管理。
 
 课程将采购管家传入 `Runner`，使用 `InMemorySessionService()` 管理会话。内存服务适合演示，进程退出后不能据此假设会话仍然保存。
 
-## 6. Gradio 交互演示与验证顺序
+### 1.6 Gradio 交互界面
 
 Gradio 承担用户界面：提交输入、展示应用返回的消息。智能体编排、A2A 通信和模型推理分别由前面的组件完成。
 
 当前素材没有独立的 Gradio 界面截图；原先放在此处的图片实际是 ADK 运行时，已调整到上一节。
+
+### 1.7 复习要点
+
+- AgentSkill 描述能力，工具函数执行实际业务。
+- AgentCard 帮助发现智能体，A2A 服务接收协作请求。
+- vLLM / Ollama 托管模型，智能体框架通过客户端调用它们。
+- 模型名称、模型文件目录和 API 地址需要分别配置。
+- Session、State、Memory 与 checkpointer 的含义和持久化边界需要分别确认。
+- 课程截图用于理解结构；复现时需核对框架版本、GPU 支持和模型配置。
+## 2. Notebook 实践（待完成）
+
+### 2.1 实践范围
+
+配套 Notebook 的具体名称、来源和任务以课程实际提供内容为准。理论部分的命令和代码片段用于理解服务关系，不代表已经成功执行。
+
+Notebook 文件、脚本、工作流和产物单独保存，在本节记录相对链接。
+
+### 2.2 建议验证顺序
 
 建议按依赖顺序验证：
 
@@ -223,11 +247,25 @@ Gradio 承担用户界面：提交输入、展示应用返回的消息。智能�
 4. **采购管家**：能够协调两个销售智能体，维护本次采购状态。
 5. **Gradio 界面**：用户输入能到达运行时，结果能正确展示。
 
-## 7. 复习要点
+### 2.3 实践结果记录
 
-- AgentSkill 描述能力，工具函数执行实际业务。
-- AgentCard 帮助发现智能体，A2A 服务接收协作请求。
-- vLLM / Ollama 托管模型，智能体框架通过客户端调用它们。
-- 模型名称、模型文件目录和 API 地址需要分别配置。
-- Session、State、Memory 与 checkpointer 的含义和持久化边界需要分别确认。
-- 课程截图用于理解结构；复现时需核对框架版本、GPU 支持和模型配置。
+| 项目 | 记录 |
+| --- | --- |
+| Notebook 名称与来源 | 待填 |
+| 对应课程（入门篇 / 进阶篇） | 待填 |
+| 执行日期 | 待填 |
+| GPU / ROCm / Python 版本 | 待填 |
+| ADK / A2A / CrewAI / LangGraph 等依赖版本 | 待填 |
+| 模型名称、版本与模型服务配置 | 待填 |
+| 请求输入与预期行为 | 待填 |
+| 实际回答、工具调用及订单结果 | 待填 |
+| Notebook / 日志 / 产物链接 | 待填 |
+| 错误、处理方法及当前阻塞 | 待填 |
+
+### 2.4 待完成事项
+
+- [ ] 打开课程配套 Notebook，确认任务范围与运行环境。
+- [ ] 按 Notebook 要求验证模型服务、单智能体与协作流程。
+- [ ] 保存关键输入、输出和工具执行结果。
+- [ ] 记录依赖版本、启动方式与排障过程。
+- [ ] 归档 Notebook 及产物，并更新学习清单。
