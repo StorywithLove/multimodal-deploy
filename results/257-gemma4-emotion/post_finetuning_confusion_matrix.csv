@@ -1,0 +1,8 @@
+,sadness,joy,love,anger,fear,surprise,INVALID
+sadness,108,3,1,0,2,0,0
+joy,2,156,4,0,0,0,0
+love,2,5,19,0,0,0,0
+anger,5,1,0,41,0,0,0
+fear,0,0,0,0,34,2,0
+surprise,0,2,0,0,3,10,0
+INVALID,0,0,0,0,0,0,0

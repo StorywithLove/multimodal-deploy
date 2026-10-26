@@ -1,0 +1,3 @@
+stage,accuracy,macro_f1,invalid_predictions,evaluated_examples
+pre_finetuning,0.6225,0.4750600720817734,2,400
+post_finetuning,0.92,0.8704364652946213,0,400
