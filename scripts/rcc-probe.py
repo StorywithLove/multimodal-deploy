@@ -13,6 +13,8 @@ ROOT = Path(os.environ.get('RCC_PROBE_HOME', '/home/opc/rcc-probe'))
 STATE = ROOT / 'state.json'
 LOG = ROOT / 'events.jsonl'
 RCC = ROOT / 'venv/bin/rcc'
+HOLD_START = datetime(2026, 10, 28, 6, tzinfo=timezone(timedelta(hours=8))).timestamp()
+HOLD_END = datetime(2026, 10, 28, 8, tzinfo=timezone(timedelta(hours=8))).timestamp()
 
 
 def now():
@@ -58,6 +60,8 @@ def record_balance(state, credits):
 
 
 def cleanup(state):
+    if state.get('held_instance'):
+        return True
     owned = state.get('owned')
     if not owned:
         return True
@@ -72,6 +76,12 @@ def cleanup(state):
         save(state)
         event('halt', reason='ownership_mismatch')
         return False
+    if state.get('retain_on_ready') and HOLD_START <= time.time() < HOLD_END and (
+            current.get('ready') or current.get('status') == 'ready'):
+        state['held_instance'] = owned
+        save(state)
+        event('held', instance_id=owned, source='cleanup_watchdog')
+        return True
     cli('instance', 'delete', '--yes')
     for _ in range(6):
         time.sleep(3)
@@ -92,6 +102,8 @@ def run(mode):
     os.environ['RCC_TOKEN'] = auth['token']
     os.environ['RCC_URL'] = auth['base_url']
     state = json.loads(STATE.read_text()) if STATE.exists() else {}
+    if state.get('held_instance'):
+        return
     if mode == 'cleanup':
         if state.get('owned') and time.time() >= state.get('release_at', 0):
             cleanup(state)
@@ -118,12 +130,16 @@ def run(mode):
     # Reserve a cleanup deadline before submitting. A timeout has uncertain ownership:
     # halt rather than retrying creation or deleting an unverified instance.
     state['create_intent'] = now()
+    state['retain_on_ready'] = HOLD_START <= time.time() < HOLD_END
     save(state)
     started = time.monotonic()
     try:
-        result = cli('instance', 'create', '--env', 'production-1', '--pod-type',
-                     'one-click', '--resource-template', 'resource-16c55g1u',
-                     '--no-ssh', '--no-wait', '--idempotency-key', 'oci-probe-' + uuid.uuid4().hex)
+        create_args = ['instance', 'create', '--env', 'production-1', '--pod-type',
+                       'one-click', '--resource-template', 'resource-16c55g1u']
+        if not state['retain_on_ready']:
+            create_args.append('--no-ssh')
+        create_args += ['--no-wait', '--idempotency-key', 'oci-probe-' + uuid.uuid4().hex]
+        result = cli(*create_args)
         instance_id = result.get('instance_id')
         if not instance_id:
             raise RuntimeError('Create response has no instance ID')
@@ -140,6 +156,10 @@ def run(mode):
                 raise RuntimeError('Instance changed during probe')
             if last.get('ready') or last.get('status') == 'ready':
                 success = True
+                if state.get('retain_on_ready') and HOLD_START <= time.time() < HOLD_END:
+                    state['held_instance'] = instance_id
+                    save(state)
+                    event('held', instance_id=instance_id, source='probe')
                 break
             if last.get('status') in ('not_found', 'failed', 'error'):
                 break
@@ -152,7 +172,7 @@ def run(mode):
             save(state)
         event('error', error=type(exc).__name__)
     finally:
-        if state.get('owned'):
+        if state.get('owned') and not state.get('held_instance'):
             cleanup(state)
         after = balance()
         record_balance(state, after)

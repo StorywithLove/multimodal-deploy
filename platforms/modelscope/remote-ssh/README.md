@@ -1,6 +1,6 @@
 ﻿# ModelScope NVIDIA 实例：Tailscale 与 SSH
 
-本文记录本机 Windows 连接 ModelScope 临时 GPU 容器的配置与重启恢复。当前 A10 实例已验证公钥 SSH 登录和 SCP 小文件上传及 SHA-256 一致；Tailscale 使用 DERP 中继，尚未建立直连。SFTP、SSH 端口转发及实例重建恢复尚未完成端到端验证。
+本文记录本机 Windows 连接 ModelScope 临时 GPU 容器的配置与重启恢复。当前 A10 实例已验证公钥 SSH 登录和 SCP 小文件上传及 SHA-256 一致；Tailscale 使用 DERP 中继，尚未建立直连。SFTP 和 SSH 端口转发尚未完成端到端验证。
 
 ## 1. 前期 Tailscale 部署
 
@@ -11,6 +11,7 @@
 - 当前实例：Ubuntu 22.04 x86_64，Tailscale 1.104.2 官方静态包已校验；没有 `/dev/net/tun`，因此使用用户态模式。
 - 服务、状态、独立 SSH 配置和主机密钥现位于 `/mnt/workspace/lcx/modelscope-remote-ssh`。这些状态文件含敏感凭据，不要提交到 Git；旧的 `/root/tmp/modelscope-remote-ssh` 留作回退。
 - 2026-10-27 从临时目录切换到持久目录后重新 SSH 登录成功；不代表实例重建后的恢复已验证。
+- 2026-10-27 用户重启并重新进入实例后，Tailscale 与 SSH 服务已运行；本机通过 `modelscope-a10` 公钥登录并识别 NVIDIA A10，用户确认 VS Code Remote-SSH 连接成功。新实例复用了持久化身份和原 Tailscale IP；仅代表本次重启验证结果，不代表服务已自动启动。
 
 本机 PowerShell 登录：
 
@@ -57,6 +58,7 @@ sleep 3
 2. 启动独立 sshd 并配置 tailnet 转发：
 
 ```bash
+mkdir -p /run/sshd
 /usr/sbin/sshd -t -f "$PWD/sshd_config" && \
   /usr/sbin/sshd -f "$PWD/sshd_config" -E "$PWD/sshd.log"
 ss -lnt | grep ':2223'
@@ -70,3 +72,5 @@ ssh-keygen -lf ssh_host_ed25519_key.pub
 如需 Serve 批准，按终端提示操作。确认监听为 `127.0.0.1:2223`、Serve 显示 tailnet only，并在本机使用第 1 节命令登录；如果 IP 改变，替换命令中的地址并核对指纹。容器重启会终止进程，当前未配置自动启动。
 
 如果持久目录不存在或文件不完整，重新按第 1 节方案配置并重新核对主机指纹；不可假设旧状态或旧 IP 一定可复用。
+
+本机已经配置 SSH 别名 `modelscope-a10`，VS Code Remote-SSH 可选择该名称；新实例的 Tailscale IP 若变化，需要更新本机 SSH config。SSH 保活不能防止网络中断，长任务应使用 `tmux` 等会话工具并保存检查点。重新分配的实例镜像和 SSH 组件也可能变化；恢复过程应以实际检查结果为准。
