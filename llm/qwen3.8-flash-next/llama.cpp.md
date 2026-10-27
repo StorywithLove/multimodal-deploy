@@ -120,8 +120,8 @@ curl -sS http://127.0.0.1:8000/v1/models
 这里的四个实验不是仅写在本页的“待办”。它们共享：
 
 - 工作负载契约：[mi300x-serving-matrix.json](../../configs/benchmark/mi300x-serving-matrix.json)：上下文目标、并发、输出上限、请求数和采样频率；
-- 测量工具：[openai_server_matrix.py](../../benchmarks/openai_server_matrix.py)：请求已启动的 OpenAI-compatible 服务，记录实际返回 token 用量、端到端延迟、吞吐、错误和 HBM 采样；
-- E4 质量探针：[openai_quality_probe.py](../../benchmarks/openai_quality_probe.py)，固定提示集：[MT-Bench Mini-8](../../benchmarks/quality/mtbench-mini-8.json)；启动 ready 探针：[server_startup_probe.py](../../benchmarks/server_startup_probe.py)；
+- 测量工具：[openai_server_matrix.py](../../configs/benchmark/openai_server_matrix.py)：请求已启动的 OpenAI-compatible 服务，记录实际返回 token 用量、端到端延迟、吞吐、错误和 HBM 采样；
+- E4 质量探针：[openai_quality_probe.py](../../configs/benchmark/openai_quality_probe.py)，固定提示集：[MT-Bench Mini-8](../../configs/benchmark/quality/mtbench-mini-8.json)；启动 ready 探针：[server_startup_probe.py](../../configs/benchmark/server_startup_probe.py)；
 - 原始证据：[results/](../../results/)：每轮生成一个小型 JSON；
 - 本页：记录服务器启动参数、实验目的、异常、图表 / 结果链接与解释。
 
@@ -162,7 +162,7 @@ test -x "$SERVER" && test -f "$Q4" && test -f "$Q5"
 # 终端 B：确认服务后生成正式 E1 证据文件。
 cd /mnt/workspace/multimodal-deploy
 curl -fsS http://127.0.0.1:8000/health && echo
-python3 -u benchmarks/openai_server_matrix.py \
+python3 -u configs/benchmark/openai_server_matrix.py \
   --config configs/benchmark/mi300x-serving-matrix.json \
   --endpoint http://127.0.0.1:8000/v1/chat/completions \
   --label qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1 \
@@ -207,7 +207,7 @@ E2 结果：12 个测试单元（3 个目标上下文 × 4 个客户端并发）
 # 终端 B：确认服务健康后测量。
 cd /mnt/workspace/multimodal-deploy
 curl -fsS http://127.0.0.1:8000/health && echo
-python3 -u benchmarks/openai_server_matrix.py \
+python3 -u configs/benchmark/openai_server_matrix.py \
   --config configs/benchmark/mi300x-serving-matrix.json \
   --endpoint http://127.0.0.1:8000/v1/chat/completions \
   --label qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e2 \
@@ -249,7 +249,7 @@ E3 结果：3 个目标上下文 × 单并发，共 24/24 请求成功，失败�
 # 终端 B：
 cd /mnt/workspace/multimodal-deploy
 curl -fsS http://127.0.0.1:8000/health && echo
-python3 -u benchmarks/openai_server_matrix.py \
+python3 -u configs/benchmark/openai_server_matrix.py \
   --config configs/benchmark/mi300x-serving-matrix.json \
   --endpoint http://127.0.0.1:8000/v1/chat/completions \
   --label qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e3 \
@@ -288,7 +288,7 @@ E3 补充实验：使用 Q4 模型、`--parallel 4`，build 支持 `--kv-unified
 # 终端 B：
 cd /mnt/workspace/multimodal-deploy
 curl -fsS http://127.0.0.1:8000/health && echo
-python3 -u benchmarks/openai_server_matrix.py \
+python3 -u configs/benchmark/openai_server_matrix.py \
   --config configs/benchmark/mi300x-serving-matrix.json \
   --endpoint http://127.0.0.1:8000/v1/chat/completions \
   --label qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e3-32768-c1-c4 \
@@ -329,7 +329,7 @@ E4-Q5 serving 的复测代码复用 E1–E3 的 `openai_server_matrix.py`；Q4 �
 # 终端 B：
 cd /mnt/workspace/multimodal-deploy
 curl -fsS http://127.0.0.1:8000/health && echo
-python3 -u benchmarks/openai_server_matrix.py \
+python3 -u configs/benchmark/openai_server_matrix.py \
   --config configs/benchmark/mi300x-serving-matrix.json \
   --endpoint http://127.0.0.1:8000/v1/chat/completions \
   --label qwen3.8-flash-next-ud-q5-k-xl-llamacpp-e4-serving \
@@ -372,7 +372,7 @@ RESULT_ROOT="results"
 for quant in q4 q5; do
   if [ "$quant" = q4 ]; then model="$Q4"; else model="$Q5"; fi
   for run in 1 2 3; do
-    python benchmarks/server_startup_probe.py \
+    python configs/benchmark/server_startup_probe.py \
       --output "$RESULT_ROOT/qwen3.8-flash-next-ud-${quant}-k-xl-llamacpp-e4-startup-${run}.json" \
       --cache-state uncontrolled --timeout 900 -- \
       "$SERVER" -m "$model" -ngl 999 -c 10240 --parallel 1 --jinja \
@@ -388,7 +388,7 @@ done
 Q4/Q5 使用同一 MT-Bench Mini-8、`temperature=0`、`max_tokens=4096` 和服务模板。推荐直接运行仓库脚本；它会检查两种量化的第一分片、拒绝复用已占用的健康端口，分别启动服务并等待 `/health`，保存 JSON 与 `.server.log`，最后自动停服：
 
 ```bash
-MAX_TOKENS=4096 bash benchmarks/run_qwen_e4_quality.sh
+MAX_TOKENS=4096 bash configs/benchmark/run_qwen_e4_quality.sh
 ```
 
 脚本运行时会产生 Q4/Q5 原始 JSON；本次复核后已合并归档为 [E4 质量归档](../../results/llm/qwen3.8-flash-next/qwen3.8-flash-next-llamacpp-e4-quality.json)。若远端实例的仓库路径或模型缓存不同，可在运行前覆盖 `WORK`、`MODEL_DIR`、`SERVER`、`RESULT_ROOT` 环境变量。终端保持在脚本末尾，便于查看失败日志而不会自动关闭。

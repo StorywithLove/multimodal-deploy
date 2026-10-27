@@ -2,13 +2,13 @@
 
 `openai_server_matrix.py` is a client-side benchmark for an already running OpenAI-compatible chat endpoint. It does not download models or start / stop servers. That keeps server lifecycle and workload measurement separate.
 
-The same client is used for llama.cpp, vLLM and SGLang. The backend-specific command is recorded in the model's backend document (for example, `llama.cpp.md`, `vllm.md` or `sglang.md`); the workload contract is [mi300x-serving-matrix.json](../configs/benchmark/mi300x-serving-matrix.json).
+The same client is used for llama.cpp, vLLM and SGLang. The backend-specific command is recorded in the model's backend document (for example, `llama.cpp.md`, `vllm.md` or `sglang.md`); the workload contract is [mi300x-serving-matrix.json](mi300x-serving-matrix.json).
 
 ## Experiment-to-code map
 
 | Experiment | Reusable code | Purpose |
 |---|---|---|
-| E1–E3 serving matrices | [`openai_server_matrix.py`](openai_server_matrix.py) + [`mi300x-serving-matrix.json`](../configs/benchmark/mi300x-serving-matrix.json) | Single-request baseline, client concurrency, long-context throughput/latency, TTFT and optional HBM sampling. Used by llama.cpp, vLLM and SGLang. |
+| E1–E3 serving matrices | [`openai_server_matrix.py`](openai_server_matrix.py) + [`mi300x-serving-matrix.json`](mi300x-serving-matrix.json) | Single-request baseline, client concurrency, long-context throughput/latency, TTFT and optional HBM sampling. Used by llama.cpp, vLLM and SGLang. |
 | E4 serving comparison | `openai_server_matrix.py` + the same workload contract | Re-run the E1 single-concurrency serving cells for an alternate quantization, as done for llama.cpp Q5. |
 | E4 quality sample | [`openai_quality_probe.py`](openai_quality_probe.py) + [`mtbench-mini-8.json`](quality/mtbench-mini-8.json) | Sequential fixed prompts; records raw choices, response text, `finish_reason`, token usage and latency. Supports and records request-level `chat_template_kwargs` (for example, `enable_thinking=false`). `run_qwen_e4_quality.sh` is the llama.cpp Q4/Q5 server-management wrapper. |
 | Startup readiness | [`server_startup_probe.py`](server_startup_probe.py) | Measures process launch to `/health` readiness, writes a JSON result and adjacent server log, and stops only the child it started. |
@@ -18,7 +18,7 @@ Backend documents contain the exact server flags and run commands; this README i
 ## Dry run
 
 ```powershell
-python benchmarks/openai_server_matrix.py --config configs/benchmark/mi300x-serving-matrix.json --endpoint http://127.0.0.1:8000/v1/chat/completions --dry-run
+python configs/benchmark/openai_server_matrix.py --config configs/benchmark/mi300x-serving-matrix.json --endpoint http://127.0.0.1:8000/v1/chat/completions --dry-run
 ```
 
 ## First llama.cpp baseline
@@ -26,7 +26,7 @@ python benchmarks/openai_server_matrix.py --config configs/benchmark/mi300x-serv
 Run this while `llama-server` is already listening:
 
 ```powershell
-python benchmarks/openai_server_matrix.py --config configs/benchmark/mi300x-serving-matrix.json --endpoint http://127.0.0.1:8000/v1/chat/completions --label qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1 --contexts 512,4096,8192 --concurrencies 1 --output results/llm/qwen3.8-flash-next/qwen3.8-flash-next-llamacpp-e1-raw.json
+python configs/benchmark/openai_server_matrix.py --config configs/benchmark/mi300x-serving-matrix.json --endpoint http://127.0.0.1:8000/v1/chat/completions --label qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e1 --contexts 512,4096,8192 --concurrencies 1 --output results/llm/qwen3.8-flash-next/qwen3.8-flash-next-llamacpp-e1-raw.json
 ```
 
 该命令生成单次原始测量；复核后将其归档到 `qwen3.8-flash-next-llamacpp-e1.json`，不要把原始输出直接覆盖归档 bundle。
@@ -52,11 +52,11 @@ The backend deployment document is the interpretation layer: it explains server 
 `openai_quality_probe.py` sends the same fixed prompt set to each model. It records the prompt, response text, HTTP status, request latency, usage tokens, server-reported generation speed when available, and an observed output-token rate.
 
 The repository includes a fixed public MT-Bench Mini-8 subset at
-`benchmarks/quality/mtbench-mini-8.json`:
+`configs/benchmark/quality/mtbench-mini-8.json`:
 
 ```bash
-python benchmarks/openai_quality_probe.py \
-  --questions benchmarks/quality/mtbench-mini-8.json \
+python configs/benchmark/openai_quality_probe.py \
+  --questions configs/benchmark/quality/mtbench-mini-8.json \
   --endpoint http://127.0.0.1:8000/v1/chat/completions \
   --label qwen3.8-flash-next-ud-q4-k-xl-llamacpp-e4-quality \
   --max-tokens 512 \
@@ -66,4 +66,4 @@ python benchmarks/openai_quality_probe.py \
 
 Run the same command again against Q5 after restarting the server and change only `--label` and `--output`. The script returns exit code `2` if any question fails, while still preserving the partial JSON for diagnosis. The observed output-token rate includes request overhead; when llama.cpp returns `timings.predicted_per_second`, that server-side value is preserved separately.
 
-For the Qwen3.8-Flash-Next E4 follow-up on a Linux instance, `MAX_TOKENS=4096 bash benchmarks/run_qwen_e4_quality.sh` runs the Q4 and Q5 quality probes with the same `temperature=0` and `max_tokens=4096`, writes temporary per-quantization JSON plus server logs, and stops only the services it starts. After review, merge the JSON payloads into the model's `qwen3.8-flash-next-llamacpp-e4-quality.json` archive.
+For the Qwen3.8-Flash-Next E4 follow-up on a Linux instance, `MAX_TOKENS=4096 bash configs/benchmark/run_qwen_e4_quality.sh` runs the Q4 and Q5 quality probes with the same `temperature=0` and `max_tokens=4096`, writes temporary per-quantization JSON plus server logs, and stops only the services it starts. After review, merge the JSON payloads into the model's `qwen3.8-flash-next-llamacpp-e4-quality.json` archive.

@@ -77,7 +77,7 @@ python generate.py --task ti2v-5B --size 1280*704 \
   --save_file output.mp4
 ```
 
-仓库已有 [Wan2.2-TI2V-5B 部署脚本](../video/wan2.2-ti2v-5b/deploy.sh) 和 [记录模板](../video/wan2.2-ti2v-5b/record.md)，但它们目前记录的是 MI300X/ROCm 路线。迁移到 A10 时要单独记录 CUDA 依赖、峰值显存和生成耗时，不要把 AMD 结果移植成 NVIDIA 结论。
+仓库已有 [Wan2.2-TI2V-5B 部署脚本](../../video/wan2.2-ti2v-5b/deploy.sh) 和 [记录模板](../../video/wan2.2-ti2v-5b/record.md)，但它们目前记录的是 MI300X/ROCm 路线。迁移到 A10 时要单独记录 CUDA 依赖、峰值显存和生成耗时，不要把 AMD 结果移植成 NVIDIA 结论。
 
 ### 2. CogVideoX-2B：最容易形成视频基线
 

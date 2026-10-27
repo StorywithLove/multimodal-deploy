@@ -10,7 +10,7 @@ WORK="${WORK:-/root/tmp/qwen3.8-flash-next}"
 MODEL_DIR="${MODEL_DIR:-$WORK/Qwen3.8-Flash-Next-GGUF}"
 SERVER="${SERVER:-$WORK/llama.cpp/build/bin/llama-server}"
 RESULT_ROOT="${RESULT_ROOT:-results}"
-QUESTIONS="${QUESTIONS:-benchmarks/quality/mtbench-mini-8.json}"
+QUESTIONS="${QUESTIONS:-configs/benchmark/quality/mtbench-mini-8.json}"
 HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8000}"
 MAX_TOKENS="${MAX_TOKENS:-2048}"
@@ -74,7 +74,7 @@ run_one() {
     return 1
   fi
 
-  python3 -u benchmarks/openai_quality_probe.py \
+  python3 -u configs/benchmark/openai_quality_probe.py \
     --questions "$QUESTIONS" \
     --endpoint "http://${HOST}:${PORT}/v1/chat/completions" \
     --label "$label" \

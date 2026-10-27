@@ -274,7 +274,7 @@ O1、O2 均为编译服务；`--compilation-config '{"mode":0}'` 是早期诊断
 - 目标上下文不是实际 prompt 长度；实际输入 tokens 以 JSON 的 `actual_tokens` 为准。
 - `prompt_tokens_per_s` 为矩阵单元实际 prompt token 总数除以 wall time，不是独立 prefill kernel 吞吐；`completion_tokens_per_s` 为 completion token 总数除以 wall time。
 - 当前结果为单轮数据，适合阶段性比较，不代表多轮统计或置信区间。显存 `delta_gib=0` 仅表示采样期未观察到相对基线增量，不代表没有 KV cache 占用。
-- 测评代码：E1–E3 使用共享客户端 [openai_server_matrix.py](../../benchmarks/openai_server_matrix.py) 和工作负载 [mi300x-serving-matrix.json](../../configs/benchmark/mi300x-serving-matrix.json)；E4 使用 [server_startup_probe.py](../../benchmarks/server_startup_probe.py) 测量启动就绪时间、使用 [openai_quality_probe.py](../../benchmarks/openai_quality_probe.py) 与[固定题集](../../benchmarks/quality/mtbench-mini-8.json)做质量抽样。矩阵和质量客户端只请求已启动服务；启动探针负责启动并停止自己创建的服务进程。
+- 测评代码：E1–E3 使用共享客户端 [openai_server_matrix.py](../../configs/benchmark/openai_server_matrix.py) 和工作负载 [mi300x-serving-matrix.json](../../configs/benchmark/mi300x-serving-matrix.json)；E4 使用 [server_startup_probe.py](../../configs/benchmark/server_startup_probe.py) 测量启动就绪时间、使用 [openai_quality_probe.py](../../configs/benchmark/openai_quality_probe.py) 与[固定题集](../../configs/benchmark/quality/mtbench-mini-8.json)做质量抽样。矩阵和质量客户端只请求已启动服务；启动探针负责启动并停止自己创建的服务进程。
 
 ### E1：O1/O2 对照及 O2 长上下文
 
@@ -322,7 +322,7 @@ E3 补充单元（目标上下文 32768、并发 4，实际 prompt 21740 tokens�
 
 ```bash
 cd /mnt/workspace/multimodal-deploy
-python3 -u benchmarks/openai_server_matrix.py \
+python3 -u configs/benchmark/openai_server_matrix.py \
   --config configs/benchmark/mi300x-serving-matrix.json \
   --endpoint http://127.0.0.1:8000/v1/chat/completions \
   --model qwen3.8-flash-next-fp8 \
@@ -335,7 +335,7 @@ O2 E1 扩展单元（服务端 `max_model_len=8192, max_num_seqs=2`）：
 
 ```bash
 cd /mnt/workspace/multimodal-deploy
-python3 -u benchmarks/openai_server_matrix.py \
+python3 -u configs/benchmark/openai_server_matrix.py \
   --config configs/benchmark/mi300x-serving-matrix.json \
   --endpoint http://127.0.0.1:8000/v1/chat/completions \
   --model qwen3.8-flash-next-fp8 \
@@ -348,7 +348,7 @@ E2 使用 O2 服务（`max_model_len=8192, max_num_seqs=8`）：
 
 ```bash
 cd /mnt/workspace/multimodal-deploy
-python3 -u benchmarks/openai_server_matrix.py \
+python3 -u configs/benchmark/openai_server_matrix.py \
   --config configs/benchmark/mi300x-serving-matrix.json \
   --endpoint http://127.0.0.1:8000/v1/chat/completions \
   --model qwen3.8-flash-next-fp8 \
@@ -361,7 +361,7 @@ E3 基线使用 O2 服务（`max_model_len=65536, max_num_seqs=4`），单并发
 
 ```bash
 cd /mnt/workspace/multimodal-deploy
-python3 -u benchmarks/openai_server_matrix.py \
+python3 -u configs/benchmark/openai_server_matrix.py \
   --config configs/benchmark/mi300x-serving-matrix.json \
   --endpoint http://127.0.0.1:8000/v1/chat/completions \
   --model qwen3.8-flash-next-fp8 \
@@ -374,7 +374,7 @@ E3 的 32768/C4 补充单元（同一 E3 服务配置）：
 
 ```bash
 cd /mnt/workspace/multimodal-deploy
-python3 -u benchmarks/openai_server_matrix.py \
+python3 -u configs/benchmark/openai_server_matrix.py \
   --config configs/benchmark/mi300x-serving-matrix.json \
   --endpoint http://127.0.0.1:8000/v1/chat/completions \
   --model qwen3.8-flash-next-fp8 \
@@ -395,8 +395,8 @@ if curl -fsS http://127.0.0.1:8000/health >/dev/null; then
   curl -sS -o /dev/null -w 'health_http=%{http_code}\n' http://127.0.0.1:8000/health
   curl -fsS http://127.0.0.1:8000/v1/models
   echo
-  python3 -u benchmarks/openai_quality_probe.py \
-    --questions benchmarks/quality/mtbench-mini-8.json \
+  python3 -u configs/benchmark/openai_quality_probe.py \
+    --questions configs/benchmark/quality/mtbench-mini-8.json \
     --endpoint http://127.0.0.1:8000/v1/chat/completions \
     --model qwen3.8-flash-next-fp8 \
     --label qwen3.8-flash-next-fp8-vllm-o2-e4-quality-mini8-max4096 \
@@ -415,8 +415,8 @@ read -r -p '检查完成；按回车关闭此终端...'
 ```bash
 cd /mnt/workspace/multimodal-deploy
 if curl -fsS http://127.0.0.1:8000/health >/dev/null; then
-  python3 -u benchmarks/openai_quality_probe.py \
-    --questions benchmarks/quality/mtbench-mini-8.json \
+  python3 -u configs/benchmark/openai_quality_probe.py \
+    --questions configs/benchmark/quality/mtbench-mini-8.json \
     --endpoint http://127.0.0.1:8000/v1/chat/completions \
     --model qwen3.8-flash-next-fp8 \
     --label qwen3.8-flash-next-fp8-vllm-o2-e4-quality-mini8-max4096-no-thinking \
@@ -467,7 +467,7 @@ if ss -ltnH 'sport = :8000' 2>/dev/null | grep -q .; then
 else
   for run in 1 2 3; do
     printf '\n=== vLLM O2 E4 startup run %s/3 ===\n' "$run"
-    python3 -u benchmarks/server_startup_probe.py \
+    python3 -u configs/benchmark/server_startup_probe.py \
       --output "results/llm/qwen3.8-flash-next/reproductions/vllm-fp8-o2-e4-startup-${run}-raw.json" \
       --cache-state uncontrolled --timeout 1200 -- \
       "$VLLM_PY" -m vllm.entrypoints.openai.api_server \

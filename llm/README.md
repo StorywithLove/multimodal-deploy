@@ -69,7 +69,7 @@ SGLang 在当前 FP8 配置下启动就绪快于 vLLM，但上下文、并发和
 ## 共用比较方法
 
 - [仓库总览](../README.md)：各模态和模型的入口。
-- [基准测试说明](../benchmarks/README.md)：共用测评器与结果口径。
+- [基准测试说明](../configs/benchmark/README.md)：共用测评器与结果口径。
 - configs/benchmark/：版本化工作负载配置。
 - results/：结构化测试结果。
 

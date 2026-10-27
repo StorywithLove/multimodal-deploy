@@ -360,7 +360,7 @@ curl -fsS http://127.0.0.1:30000/v1/chat/completions \
 ```bash
 export PYTHON_BIN=/mnt/workspace/artifacts/qwen3.8-flash-next-sglang/venv-sglang-rocm723/bin/python
 cd /mnt/workspace/multimodal-deploy
-"$PYTHON_BIN" -u benchmarks/openai_server_matrix.py \
+"$PYTHON_BIN" -u configs/benchmark/openai_server_matrix.py \
   --config configs/benchmark/mi300x-serving-matrix.json \
   --endpoint http://127.0.0.1:30000/v1/chat/completions \
   --model qwen3.8-flash-next-fp8-sglang \
@@ -384,7 +384,7 @@ cd /mnt/workspace/multimodal-deploy
 ```bash
 export PYTHON_BIN=/mnt/workspace/artifacts/qwen3.8-flash-next-sglang/venv-sglang-rocm723/bin/python
 cd /mnt/workspace/multimodal-deploy
-"$PYTHON_BIN" -u benchmarks/openai_server_matrix.py \
+"$PYTHON_BIN" -u configs/benchmark/openai_server_matrix.py \
   --config configs/benchmark/mi300x-serving-matrix.json \
   --endpoint http://127.0.0.1:30000/v1/chat/completions \
   --model qwen3.8-flash-next-fp8-sglang \
@@ -436,7 +436,7 @@ mkdir -p "$RESULT_DIR"
 export PYTHON_BIN=/mnt/workspace/artifacts/qwen3.8-flash-next-sglang/venv-sglang-rocm723/bin/python
 cd /mnt/workspace/multimodal-deploy
 if "$PYTHON_BIN" -c 'import json, urllib.request; d=json.load(urllib.request.urlopen("http://127.0.0.1:30000/v1/models", timeout=5)); n=d["data"][0]["max_model_len"]; print("max_model_len:", n); assert n == 32768, n'; then
-  "$PYTHON_BIN" -u benchmarks/openai_server_matrix.py \
+  "$PYTHON_BIN" -u configs/benchmark/openai_server_matrix.py \
     --config configs/benchmark/mi300x-serving-matrix.json \
     --endpoint http://127.0.0.1:30000/v1/chat/completions \
     --model qwen3.8-flash-next-fp8-sglang \
@@ -491,8 +491,8 @@ mkdir -p "$RESULT_DIR"
 export PYTHON_BIN=/mnt/workspace/artifacts/qwen3.8-flash-next-sglang/venv-sglang-rocm723/bin/python
 cd /mnt/workspace/multimodal-deploy
 if "$PYTHON_BIN" -c 'import json, urllib.request; urllib.request.urlopen("http://127.0.0.1:30000/health", timeout=5); d=json.load(urllib.request.urlopen("http://127.0.0.1:30000/v1/models", timeout=5)); m=d["data"][0]; print("model:", m["id"], "max_model_len:", m["max_model_len"]); assert m["id"] == "qwen3.8-flash-next-fp8-sglang" and m["max_model_len"] == 32768'; then
-  "$PYTHON_BIN" -u benchmarks/openai_quality_probe.py \
-    --questions benchmarks/quality/mtbench-mini-8.json \
+  "$PYTHON_BIN" -u configs/benchmark/openai_quality_probe.py \
+    --questions configs/benchmark/quality/mtbench-mini-8.json \
     --endpoint http://127.0.0.1:30000/v1/chat/completions \
     --model qwen3.8-flash-next-fp8-sglang \
     --label qwen3.8-flash-next-sglang-fp8-e4-quality-mini8-max4096 \
@@ -535,7 +535,7 @@ if curl -fsS http://127.0.0.1:30000/health >/dev/null; then
 else
   for run in 1 2 3; do
     echo "=== SGLang E4 startup $run/3 ==="
-    if "$PYTHON_BIN" -u benchmarks/server_startup_probe.py \
+    if "$PYTHON_BIN" -u configs/benchmark/server_startup_probe.py \
       --health http://127.0.0.1:30000/health \
       --output "$RESULT_DIR/reproductions/sglang-fp8-e4-startup-${run}-raw.json" \
       --cache-state uncontrolled --timeout 1200 -- \

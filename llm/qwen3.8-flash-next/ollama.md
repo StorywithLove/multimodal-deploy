@@ -360,8 +360,8 @@ ollama run qwen3.8-flash-next-ollama-ud-q4-k-xl '只回复：模型重启后可�
 
 ### 共同口径
 
-- E1–E3 复用 [统一负载配置](../../configs/benchmark/mi300x-serving-matrix.json) 和 [openai_server_matrix.py](../../benchmarks/openai_server_matrix.py)，请求 Ollama 的 `/v1/chat/completions`。
-- E4 质量抽样复用 [Mini-8 题集](../../benchmarks/quality/mtbench-mini-8.json) 和 [openai_quality_probe.py](../../benchmarks/openai_quality_probe.py)。
+- E1–E3 复用 [统一负载配置](../../configs/benchmark/mi300x-serving-matrix.json) 和 [openai_server_matrix.py](../../configs/benchmark/openai_server_matrix.py)，请求 Ollama 的 `/v1/chat/completions`。
+- E4 质量抽样复用 [Mini-8 题集](../../configs/benchmark/quality/mtbench-mini-8.json) 和 [openai_quality_probe.py](../../configs/benchmark/openai_quality_probe.py)。
 - 本组 Ollama 与 llama.cpp 使用同一份 `UD-Q4_K_XL` GGUF；记录两边版本、context 容量、并发限制和启动参数。该实验比较的是 GGUF 模型在 Ollama 管理服务栈与 llama.cpp server 中的表现。
 - vLLM/SGLang 使用 FP8 Safetensors，与本组 GGUF 的跨组结果应标为**部署路线比较**，不能写成纯框架胜负。
 - Ollama `/api/tags` 的快速响应只说明 API 服务已起来，不代表模型已加载。不能把通用 `/health` ready 时间直接当作 Ollama 模型冷启动时间；模型冷加载时间应从首次请求测量并单独标注。
@@ -372,7 +372,7 @@ ollama run qwen3.8-flash-next-ollama-ud-q4-k-xl '只回复：模型重启后可�
 
 ```bash
 cd /mnt/workspace/multimodal-deploy
-python -u benchmarks/openai_server_matrix.py \
+python -u configs/benchmark/openai_server_matrix.py \
   --config configs/benchmark/mi300x-serving-matrix.json \
   --endpoint http://127.0.0.1:11435/v1/chat/completions \
   --model qwen3.8-flash-next-ollama-ud-q4-k-xl \
@@ -425,7 +425,7 @@ export OLLAMA_HOST=127.0.0.1:11435
 export OLLAMA_TAG=qwen3.8-flash-next-ollama-ud-q4-k-xl
 export RESULT_DIR=/mnt/workspace/multimodal-deploy/results/llm/qwen3.8-flash-next
 cd /mnt/workspace/multimodal-deploy
-python -u benchmarks/openai_server_matrix.py \
+python -u configs/benchmark/openai_server_matrix.py \
   --config configs/benchmark/mi300x-serving-matrix.json \
   --endpoint http://127.0.0.1:11435/v1/chat/completions \
   --model "$OLLAMA_TAG" \
@@ -556,7 +556,7 @@ set +e
     exit 1
   fi
   cd /mnt/workspace/multimodal-deploy
-  python -u benchmarks/openai_server_matrix.py \
+  python -u configs/benchmark/openai_server_matrix.py \
     --config configs/benchmark/mi300x-serving-matrix.json \
     --endpoint http://127.0.0.1:11435/v1/chat/completions \
     --model "$OLLAMA_TAG_CTX32K" \
@@ -606,7 +606,7 @@ mkdir -p "$RESULT_DIR"
   else
     for run in 1 2 3; do
       echo "=== Ollama E4 API startup $run/3 ==="
-      python -u benchmarks/server_startup_probe.py \
+      python -u configs/benchmark/server_startup_probe.py \
         --health "http://$OLLAMA_HOST/" \
         --output "$RESULT_DIR/qwen3.8-flash-next-ollama-ud-q4-k-xl-e4-startup-api-${run}-raw.json" \
         --cache-state uncontrolled --timeout 1200 -- \
@@ -712,8 +712,8 @@ fi
 
 ```bash
 cd /mnt/workspace/multimodal-deploy
-python -u benchmarks/openai_quality_probe.py \
-  --questions benchmarks/quality/mtbench-mini-8.json \
+python -u configs/benchmark/openai_quality_probe.py \
+  --questions configs/benchmark/quality/mtbench-mini-8.json \
   --endpoint http://127.0.0.1:11435/v1/chat/completions \
   --model qwen3.8-flash-next-ollama-ud-q4-k-xl \
   --label qwen3.8-flash-next-ollama-ud-q4-k-xl-e4-quality \

@@ -17,7 +17,7 @@
 | SGLang | 同一份原生 FP8 Safetensors | E1–E4 完成；32K 使用 Triton attention backend | [sglang.md](sglang.md) |
 | Ollama | UD-Q4_K_XL GGUF | 已迁移至 `/root/tmp`；E1–E4 完成（API ready 中位数 1.088 s，首次模型请求墙钟 82.471 s） | [ollama.md](ollama.md) |
 
-已测路线使用单张 MI300X、ROCm 7.2.x、`gfx942`，并复用 `../../configs/benchmark/mi300x-serving-matrix.json` 和 `../../benchmarks/openai_server_matrix.py`。llama.cpp 使用 GGUF Q4/Q5，Ollama 使用同源 GGUF UD-Q4_K_XL，vLLM 与 SGLang 使用原生 FP8；跨格式结果代表**部署组合**，不能写成纯框架排名。
+已测路线使用单张 MI300X、ROCm 7.2.x、`gfx942`，并复用 `../../configs/benchmark/mi300x-serving-matrix.json` 和 `../../configs/benchmark/openai_server_matrix.py`。llama.cpp 使用 GGUF Q4/Q5，Ollama 使用同源 GGUF UD-Q4_K_XL，vLLM 与 SGLang 使用原生 FP8；跨格式结果代表**部署组合**，不能写成纯框架排名。
 
 ### Ollama 与 llama.cpp 的关系
 

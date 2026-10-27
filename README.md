@@ -8,10 +8,7 @@
 
 | 目录 | 主要功能 |
 |---|---|
-| `benchmarks/` | 共用推理服务基准、质量探针、启动就绪探针及其使用说明。 |
 | `configs/` | 版本化的基准工作负载和实验配置。 |
-| `docs/runs/` | 可复现实验的运行记录和过程说明。 |
-| `lessons/` | 推理部署、调试与工程实践的学习笔记。 |
 | `llm/` | 语言模型部署路线、模型索引、测试概要和各模型详细记录。 |
 | `platforms/` | ModelScope、Hugging Face 的 API 调用、数据集实践与能力探索，以及模力方舟 / 沐曦的多模态云端部署、API 服务和排障记录。 |
 | `results/` | 结构化基准结果和实验输出，不存放模型权重。 |
@@ -105,7 +102,7 @@ llama.cpp 直接从 GGUF 文件启动；Ollama 在推理前增加服务管理、
 | 模型索引与分支实测概要 | [llm/README.md](llm/README.md) | 汇总语言模型路线，方便横向查看 |
 | 模型和后端详细记录 | 各模型项目目录 | 记录部署步骤、参数、结果和限制 |
 | 工作负载配置 | configs/benchmark/ | 版本化定义上下文、并发、输出长度和请求数 |
-| 测评工具与说明 | [benchmarks/README.md](benchmarks/README.md) | 通过已启动的 OpenAI-compatible 服务执行一致测量 |
+| 测评工具与说明 | [configs/benchmark/README.md](configs/benchmark/README.md) | 通过已启动的 OpenAI-compatible 服务执行一致测量 |
 | 结构化结果 | results/ | 保存环境信息和聚合指标 |
 
 比较结果应标明模型版本、硬件、软件栈、权重格式与精度、上下文和并发设置。权重表示或精度不同的路线应按端到端部署方案解读；缺少数据的项目标为“未测”，不据此推断能力上限。
