@@ -1,5 +1,15 @@
 # GPU 实例使用与维护
 
+## 当前实例对比（2026-10-28）
+
+| 对比项 | AMD Radeon Cloud 国际站 | ModelScope Notebook（A10） |
+| --- | --- | --- |
+| SSH 连接 | 本机通过 `radeon-gpu` 别名和公钥直连实例；重建后地址和端口可能变化。 | 通过 Tailscale 私有网络间接连接，当前经 DERP 中继；配置和恢复步骤见 [ModelScope 远程 SSH](platforms/modelscope/remote-ssh/README.md)。 |
+| VS Code | 配置实例 sshd 的 TCP 转发后，使用本机 VS Code Remote-SSH 直连。 | 可使用平台浏览器工作区的终端配置连接，也已验证本机 VS Code Remote-SSH 经 Tailscale 连接。 |
+| 网络与模型下载 | 当前实例直连多个公网网站超时；平台出口代理可访问部分站点，但有访问限制。Codex 设备码登录经本机代理的 SSH 反向转发成功；实例内 Clash 节点直连超时，平台代理拒绝连接节点端口。 | 按用户当前使用经验，暂未遇到上述网络限制，可快速下载 ModelScope 模型；具体速度和其他站点可达性随实例及网络变化。 |
+
+AMD 网络测试为当前实例的结果，不代表平台所有实例；ModelScope 下载速度尚无本次量化测量。
+
 目标：在本机 VS Code 中连接云端 GPU 实例，模块化开发，并管理代码和实验产物。主要路线为 AMD Radeon Cloud 国际站与 ModelScope Notebook；时长、实例状态和连接能力以平台页面及实测为准。
 
 | 路线 | 资源与当前状态 | VS Code 连接 |
@@ -18,6 +28,24 @@
 - [官方开发者计划文档](https://amd-aim.github.io/radeon-cloud-docs/zh-cn/guides/developer-program/)目前仍描述中国站兑换，并称全球站不使用该计划，与国际站页面及本次实际操作存在差异；以当前页面和实际兑换结果为本次记录依据。
 
 ### AMD GPU 连接与环境（2026-10-28）
+
+#### Codex：通过本机代理登录
+
+当前 AMD 实例使用平台出口代理请求 Codex 设备码返回 403；通过 SSH 将本机 HTTP 代理反向转发后，已完成 ChatGPT 设备码登录，CLI 模型请求和交互界面均验证成功。本机代理需监听 `127.0.0.1:7890`，在本机 PowerShell 运行并保持连接：
+
+```powershell
+ssh -N -R 127.0.0.1:17890:127.0.0.1:7890 radeon-gpu
+```
+
+在 AMD 远程终端设置代理，再运行插件自带 CLI（路径随插件更新而变化）：
+
+```bash
+export HTTP_PROXY=http://127.0.0.1:17890 HTTPS_PROXY=http://127.0.0.1:17890
+export http_proxy="$HTTP_PROXY" https_proxy="$HTTPS_PROXY"
+/root/.vscode-server/extensions/openai.chatgpt-26.51021.22027/bin/linux-x86_64/codex --no-daemon
+```
+
+首次登录可用同一可执行文件运行 `login --device-auth`，在本机浏览器完成设备码授权。代理变量只对当前终端及其子进程生效；VS Code 插件使用该转发尚未验证。SSH 转发或本机代理停止后远程访问会中断；登录凭据不得提交到仓库。
 
 本机已配置 `radeon-gpu` SSH 别名，VS Code Remote-SSH 可选择该别名；当前实例直连命令（实例重建后地址、端口可能变化）：
 
