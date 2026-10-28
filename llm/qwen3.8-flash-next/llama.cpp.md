@@ -1,5 +1,7 @@
 # Qwen3.8-Flash-Next / llama.cpp / GGUF
 
+> 历史测评说明：`configs/benchmark/` 已移除；本文保留的相关命令仅供查阅，无法直接执行复现。
+
 - 平台：ModelScope 单张 AMD MI300X 192GB，ROCm 7.2，`gfx942`
 - 模型：`Qwen/Qwen3.8-Flash-Next`
 - 量化：Unsloth `UD-Q4_K_XL` GGUF（约 104 GiB 下载体积）
@@ -119,9 +121,9 @@ curl -sS http://127.0.0.1:8000/v1/models
 
 这里的四个实验不是仅写在本页的“待办”。它们共享：
 
-- 工作负载契约：[mi300x-serving-matrix.json](../../configs/benchmark/mi300x-serving-matrix.json)：上下文目标、并发、输出上限、请求数和采样频率；
-- 测量工具：[openai_server_matrix.py](../../configs/benchmark/openai_server_matrix.py)：请求已启动的 OpenAI-compatible 服务，记录实际返回 token 用量、端到端延迟、吞吐、错误和 HBM 采样；
-- E4 质量探针：[openai_quality_probe.py](../../configs/benchmark/openai_quality_probe.py)，固定提示集：[MT-Bench Mini-8](../../configs/benchmark/quality/mtbench-mini-8.json)；启动 ready 探针：[server_startup_probe.py](../../configs/benchmark/server_startup_probe.py)；
+- 工作负载契约：mi300x-serving-matrix.json：上下文目标、并发、输出上限、请求数和采样频率；
+- 测量工具：openai_server_matrix.py：请求已启动的 OpenAI-compatible 服务，记录实际返回 token 用量、端到端延迟、吞吐、错误和 HBM 采样；
+- E4 质量探针：openai_quality_probe.py，固定提示集：MT-Bench Mini-8；启动 ready 探针：server_startup_probe.py；
 - 原始证据：[results/](../../results/)：每轮生成一个小型 JSON；
 - 本页：记录服务器启动参数、实验目的、异常、图表 / 结果链接与解释。
 

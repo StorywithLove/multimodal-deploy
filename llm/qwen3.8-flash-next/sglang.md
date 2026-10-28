@@ -1,5 +1,7 @@
 # Qwen3.8-Flash-Next / SGLang / FP8
 
+> 历史测评说明：`configs/benchmark/` 已移除；本文保留的相关命令仅供查阅，无法直接执行复现。
+
 - 硬件：AMD Instinct MI300X 192GB，ROCm 7.2.3，`gfx942`
 - 权重：`Qwen/Qwen3.8-Flash-Next-FP8`，复用 vLLM 已下载目录
 - 端口：`127.0.0.1:30000`

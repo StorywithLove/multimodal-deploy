@@ -1,5 +1,7 @@
 # Qwen3.8-Flash-Next / vLLM / FP8
 
+> 历史测评说明：`configs/benchmark/` 已移除；本文保留的相关命令仅供查阅，无法直接执行复现。
+
 - 后端：vLLM
 - 权重：[Qwen/Qwen3.8-Flash-Next-FP8（Hugging Face）](https://huggingface.co/Qwen/Qwen3.8-Flash-Next-FP8)
 - 镜像：[Qwen/Qwen3.8-Flash-Next-FP8（ModelScope）](https://modelscope.cn/models/Qwen/Qwen3.8-Flash-Next-FP8)
@@ -274,7 +276,7 @@ O1、O2 均为编译服务；`--compilation-config '{"mode":0}'` 是早期诊断
 - 目标上下文不是实际 prompt 长度；实际输入 tokens 以 JSON 的 `actual_tokens` 为准。
 - `prompt_tokens_per_s` 为矩阵单元实际 prompt token 总数除以 wall time，不是独立 prefill kernel 吞吐；`completion_tokens_per_s` 为 completion token 总数除以 wall time。
 - 当前结果为单轮数据，适合阶段性比较，不代表多轮统计或置信区间。显存 `delta_gib=0` 仅表示采样期未观察到相对基线增量，不代表没有 KV cache 占用。
-- 测评代码：E1–E3 使用共享客户端 [openai_server_matrix.py](../../configs/benchmark/openai_server_matrix.py) 和工作负载 [mi300x-serving-matrix.json](../../configs/benchmark/mi300x-serving-matrix.json)；E4 使用 [server_startup_probe.py](../../configs/benchmark/server_startup_probe.py) 测量启动就绪时间、使用 [openai_quality_probe.py](../../configs/benchmark/openai_quality_probe.py) 与[固定题集](../../configs/benchmark/quality/mtbench-mini-8.json)做质量抽样。矩阵和质量客户端只请求已启动服务；启动探针负责启动并停止自己创建的服务进程。
+- 测评代码：E1–E3 使用共享客户端 openai_server_matrix.py 和工作负载 mi300x-serving-matrix.json；E4 使用 server_startup_probe.py 测量启动就绪时间、使用 openai_quality_probe.py 与固定题集做质量抽样。矩阵和质量客户端只请求已启动服务；启动探针负责启动并停止自己创建的服务进程。
 
 ### E1：O1/O2 对照及 O2 长上下文
 
