@@ -51,6 +51,16 @@ def balance():
     return float(cli('credits', 'status')['credits'])
 
 
+def create_args(retain, request_persistent):
+    args = ['instance', 'create', '--env', 'production-1', '--pod-type',
+            'one-click', '--resource-template', 'resource-16c55g1u']
+    if not retain:
+        args.append('--no-ssh')
+    elif request_persistent:
+        args.append('--use-pvc')
+    return args + ['--no-wait', '--idempotency-key', 'oci-probe-' + uuid.uuid4().hex]
+
+
 def record_balance(state, credits):
     previous = state.get('last_credits')
     if previous is not None and credits < previous:
@@ -134,12 +144,9 @@ def run(mode):
     save(state)
     started = time.monotonic()
     try:
-        create_args = ['instance', 'create', '--env', 'production-1', '--pod-type',
-                       'one-click', '--resource-template', 'resource-16c55g1u']
-        if not state['retain_on_ready']:
-            create_args.append('--no-ssh')
-        create_args += ['--no-wait', '--idempotency-key', 'oci-probe-' + uuid.uuid4().hex]
-        result = cli(*create_args)
+        persistent = state['retain_on_ready'] and (ROOT / 'REQUEST_PERSISTENT').exists()
+        args = create_args(state['retain_on_ready'], persistent)
+        result = cli(*args)
         instance_id = result.get('instance_id')
         if not instance_id:
             raise RuntimeError('Create response has no instance ID')
@@ -147,7 +154,8 @@ def run(mode):
         state['release_at'] = time.time() + 120
         state.pop('create_intent', None)
         save(state)
-        event('submitted', instance_id=instance_id, credits=credits)
+        event('submitted', instance_id=instance_id, credits=credits,
+              persistent_requested=persistent)
         success = False
         last = {}
         while time.time() < state['release_at']:
@@ -164,8 +172,12 @@ def run(mode):
             if last.get('status') in ('not_found', 'failed', 'error'):
                 break
             time.sleep(10)
+        persistence = last.get('persistent_available')
+        if not isinstance(persistence, bool):
+            persistence = None
         event('outcome', success=success, seconds=round(time.monotonic()-started, 2),
-              status=last.get('status'), reason=last.get('reason'), instance_id=instance_id)
+              status=last.get('status'), reason=last.get('reason'), instance_id=instance_id,
+              persistent_available=persistence)
     except Exception as exc:
         if not state.get('owned'):
             state['halt'] = 'create_uncertain_or_rejected'

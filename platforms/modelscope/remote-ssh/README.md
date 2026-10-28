@@ -12,6 +12,7 @@
 - 服务、状态、独立 SSH 配置和主机密钥现位于 `/mnt/workspace/lcx/modelscope-remote-ssh`。这些状态文件含敏感凭据，不要提交到 Git；旧的 `/root/tmp/modelscope-remote-ssh` 留作回退。
 - 2026-10-27 从临时目录切换到持久目录后重新 SSH 登录成功；不代表实例重建后的恢复已验证。
 - 2026-10-27 用户重启并重新进入实例后，Tailscale 与 SSH 服务已运行；本机通过 `modelscope-a10` 公钥登录并识别 NVIDIA A10，用户确认 VS Code Remote-SSH 连接成功。新实例复用了持久化身份和原 Tailscale IP；仅代表本次重启验证结果，不代表服务已自动启动。
+- VS Code Server 安装根目录配置为 `/mnt/workspace/lcx/vscode-server`；更换为 CPU 实例后，Server 从该持久目录启动，启动日志未见重新下载。VS Code 更新或平台存储变化时可能仍需重新下载或配置。
 
 本机 PowerShell 登录：
 

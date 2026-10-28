@@ -4,20 +4,49 @@
 
 | 路线 | 资源与当前状态 | VS Code 连接 |
 | --- | --- | --- |
-| AMD Radeon Cloud 国际站 | 用户提供约330可消耗开发者积分、每天最多兑换20小时；积分是待兑换额度，不等于已到账330 GPU-hours | RCC 登录、公钥配置和申请流程已验证；带 SSH 的实例端到端连接待实测 |
+| AMD Radeon Cloud 国际站 | 用户提供约330可消耗开发者积分、每天最多兑换20小时；积分是待兑换额度，不等于已到账330 GPU-hours | 当前实例已验证 SSH 与 VS Code Remote-SSH；需在实例内启用 TCP 端口转发 |
 | ModelScope Notebook | 用户提供普通GPU约220小时时长；余额、机型与实例限制以当前页面为准 | A10 已验证 Tailscale 私有 SSH 与 VS Code Remote-SSH；重启后恢复连接成功 |
 
 ## AMD Radeon Cloud
 
 ### 国际站、中国站与积分
 
-- 下方 RCC 自动探测使用 Radeon Cloud **国际站**，服务地址为 `radeon-global.anruicloud.com`。
+- 下方 RCC 自动探测使用 Radeon Cloud **国际站**，服务地址为 [radeon-global.anruicloud.com](https://radeon-global.anruicloud.com/)。
 - 2026-10-26 实测国际站 CLI 登录成功；中国站登录返回 403，调整请求后路由返回 404，尚未验证成功。这是当时的实测结果，不代表中国站永久不支持 CLI。
 - 用户实际操作：使用国际站登录邮箱登录 AMD Developer Program 并完成关联，国际站页面显示 `Connected`；完成认证获得开发者积分后，在 [开发者积分兑换页面](https://developer.amd.com.cn/points/redeem)领取算力优惠券，再到国际站 `Redeem Credits` 兑换，供国际站实例使用。
 - 国际站页面明确提示可从 AMD Developer China 获取优惠券并在此兑换。国际站账号余额从5增至15 GPU-hours，用户确认通过上述流程获得额度。
 - [官方开发者计划文档](https://amd-aim.github.io/radeon-cloud-docs/zh-cn/guides/developer-program/)目前仍描述中国站兑换，并称全球站不使用该计划，与国际站页面及本次实际操作存在差异；以当前页面和实际兑换结果为本次记录依据。
 
-### 计划中的 VS Code 连接
+### AMD GPU 连接与环境（2026-10-28）
+
+本机已配置 `radeon-gpu` SSH 别名，VS Code Remote-SSH 可选择该别名；当前实例直连命令（实例重建后地址、端口可能变化）：
+
+```powershell
+ssh -i "$env:USERPROFILE\.radeon-cloud\keys\code12ab@gmail.com\id_ed25519" -p 35841 root@36.150.116.206
+```
+
+#### VS Code Remote-SSH：启用端口转发
+
+2026-10-28 当前实例实测：SSH 登录正常，但平台启动的 sshd 使用 `/tmp/amd-oneclick-sshd_config`，默认 `AllowTcpForwarding no`，导致 VS Code 报 `administratively prohibited`。在实例终端执行以下命令，验证配置后重载服务，重新连接 `radeon-gpu` 已成功：
+
+```bash
+cp /tmp/amd-oneclick-sshd_config /tmp/amd-oneclick-sshd_config.bak
+sed -i 's/^AllowTcpForwarding no$/AllowTcpForwarding yes/' /tmp/amd-oneclick-sshd_config
+sshd -t -f /tmp/amd-oneclick-sshd_config && kill -HUP "$(cat /tmp/amd-oneclick-sshd.pid)"
+```
+
+`sshd -t` 成功时不输出；重载后需重新建立 Remote-SSH 连接。可用 `sshd -T -f /tmp/amd-oneclick-sshd_config | grep '^allowtcpforwarding'` 检查配置文件，应显示 `allowtcpforwarding yes`；最终以重新连接实测为准。该文件位于 `/tmp` 且由平台管理，实例重启或重建后是否保留尚未验证；新实例需先检查实际配置，确认平台允许修改后再操作。启用转发会改变实例 SSH 访问能力。若需撤销，可将备份恢复到原路径，验证配置后同样重载 sshd。
+
+实测 Ubuntu 24.04、Python 3.12、ROCm 7.2.1、PyTorch 2.9.1、Transformers 4.57.6、vLLM 0.16.1 开发版和 JupyterLab 4.5.6；PyTorch 已识别 GPU。使用预装环境：
+
+```bash
+source /opt/venv/bin/activate
+python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
+```
+
+用户数据放 `/workspace`：当前约 93 GiB 可用，足够一般代码与实验，但大模型权重、数据和检查点可能超过容量，需提前估算、清理或使用外部存储。`/root` 位于容器的根 overlay，可作大模型临时缓存，`/root/.cache` 也是常见默认缓存位置；显示约 1.8 TiB 是底层文件系统的可用空间，并非已确认的个人配额，实例删除后不保留。真正的 `/tmp` 是 4 GiB 的内存 tmpfs，不适合放大模型。此次创建未显式要求持久化，不能仅凭容量确认 `/workspace` 可跨实例保留；重要数据另行备份，并在控制台核对工作区类型。[官方存储说明](https://amd-aim.github.io/radeon-cloud-docs/zh-cn/guides/storage/)。
+
+### CLI 连接
 
 本机 `stock` 环境可运行 `rcc`，国际站账号和公钥已配置。用户截图显示剩余330开发者积分，按本人反馈每天最多兑换20小时；到期和到账条件以平台实际提示为准。探测在北京时间04:00–08:00共8次均达到 ready，可优先在04:00或06:00尝试，但仅是一次夜间的初步观察，不能保证每天有资源。OCI 按30分钟继续三天探测；正式训练前先暂停探测并确认探测实例已释放。
 
@@ -29,7 +58,7 @@ rcc instance status
 rcc instance ssh --print
 ```
 
-这是目标路径：国际站申请过且已配置公钥，但带 SSH 的 ready 实例尚未实测登录。成功后使用 `ssh --print` 输出配置 VS Code Remote - SSH；保存数据并按平台指引释放实例。
+2026-10-28 已实测当前实例的 SSH 公钥登录；实例重建后用 `ssh --print` 获取新连接信息。
 
 ### OCI 自动探测（国际站）
 
@@ -37,7 +66,7 @@ rcc instance ssh --print
 
 #### 2026-10-28 保留实例计划
 
-- 北京时间10月28日06:00–08:00（不含08:00），定时申请首次达到 ready 时保留实例，供持久化和 VS Code SSH 研究；窗口内请求启用 SSH。公钥已配置，但连接尚未端到端验证。
+- 北京时间10月28日06:00–08:00（不含08:00），定时申请首次达到 ready 时保留实例，供持久化和 VS Code SSH 研究；窗口内请求启用 SSH。后续已验证 SSH 与 VS Code Remote-SSH，配置见上文。
 - 成功后脚本和清理任务均跳过该实例，不再提交探测；实例可能持续扣除 GPU-hours，需用户使用完后手动释放。若窗口内未成功，普通探测按原计划继续。
 - 原有3天期限、0.25 GPU-hour 观测下降停止阈值、已有实例和认证异常保护仍生效，可能使窗口内不发起申请；余额阈值不是硬扣费上限。
 - 本机检查：`rcc instance status`；就绪后 `rcc instance ssh --print` 查看连接方式。结束实验并确认产物保存后，用 `rcc instance delete --yes` 释放，随后 `rcc instance status` 核实实例消失。保留标记不会自动清除，释放后如需恢复探测需先检查 OCI 状态并人工处理。
@@ -51,6 +80,7 @@ rcc instance ssh --print
 - 每次仅在账号无实例时创建；只删除记录ID匹配的探测实例，不接管其他实例。该账号不应同时手动创建实例；正式训练前先暂停并确认探测实例已清理。
 - 累计观测余额下降达到0.25 GPU-hour后停止新增申请；充值不会抵消已观察到的下降。它是停止阈值，并非服务端硬预算，单次扣费和余额延迟可能导致超出；该账号的其他使用也可能触发阈值。
 - 认证、查询或删除异常不应被当作资源不足；创建结果不确定时停止新增申请，需人工确认，避免误删或重复提交。
+- 可在 OCI 创建 `/opt/rcc-probe/REQUEST_PERSISTENT` 标记，让未来保留窗口内的申请显式传 `--use-pvc`；普通短时探测不受影响。标记不改变现有实例，也不创建新的保留窗口。服务端不支持或创建结果不明确时按原有保护停止，不自动降级或重复创建；申请持久化不等于挂载成功，结果缺少 `persistent_available` 时状态为未知，须核查平台。删除标记可关闭此选项。
 - 网络故障时无法保证即时释放；日志出现cleanup_pending或error时需检查。这里没有配置外部消息通知。
 
 #### 运维命令（OCI终端）
