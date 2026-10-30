@@ -1,0 +1,58 @@
+脚本: /mnt/workspace/multimodal-deploy/scripts/amd-academy/5052_video_generation.py
+Python: python
+日志: /root/tmp/logs/5052_video_generation_20261030_172506_DDqAN1.log
+PyTorch: 2.13.0+cu130; CUDA: 13.0; GPU: NVIDIA A10
+ComfyUI 与视频目录: /root/tmp/ComfyUI-5052；实例回收前请备份 output。
+复用已校验模型: /root/tmp/ComfyUI-5052/models/diffusion_models/wan2.2_ti2v_5B_fp16.safetensors
+复用已校验模型: /root/tmp/ComfyUI-5052/models/vae/wan2.2_vae.safetensors
+复用已校验模型: /root/tmp/ComfyUI-5052/models/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors
+工作流: /root/tmp/ComfyUI-5052/user/default/workflows/video_wan2_2_5B_ti2v.json
+启动 ComfyUI: http://127.0.0.1:8000/；远程访问请通过 SSH 转发该端口。
+打开界面后加载工作流，设置提示词并提交任务；视频默认保存在 output。
+Checkpoint files will always be loaded safely.
+Total VRAM 22716 MB, total RAM 28672 MB
+pytorch version: 2.13.0+cu130
+Set vram state to: NORMAL_VRAM
+Device: cuda:0 NVIDIA A10 : cudaMallocAsync
+Using pytorch attention
+Python version: 3.12.13 (main, Aug 20 2026, 17:28:00) [GCC 11.4.0]
+ComfyUI version: 0.3.65
+ComfyUI frontend version: 1.28.7
+[Prompt Server] web root: /usr/local/lib/python3.12/site-packages/comfyui_frontend_package/static
+
+Import times for custom nodes:
+   0.0 seconds: /root/tmp/ComfyUI-5052/custom_nodes/websocket_image_save.py
+
+setup plugin alembic.autogenerate.schemas
+setup plugin alembic.autogenerate.tables
+setup plugin alembic.autogenerate.types
+setup plugin alembic.autogenerate.constraints
+setup plugin alembic.autogenerate.defaults
+setup plugin alembic.autogenerate.comments
+setup plugin alembic.ext.checkconstraint_byname
+Context impl SQLiteImpl.
+Will assume non-transactional DDL.
+No target revision found.
+Starting server
+
+To see the GUI go to: http://127.0.0.1:8000
+got prompt
+Using pytorch attention in VAE
+Using pytorch attention in VAE
+VAE load device: cuda:0, offload device: cpu, dtype: torch.bfloat16
+Using scaled fp8: fp8 matrix mult: False, scale input: False
+Requested to load WanTEModel
+loaded completely 9.5367431640625e+25 6419.477203369141 True
+CLIP/text encoder model load device: cuda:0, offload device: cpu, current: cuda:0, dtype: torch.float16
+model weight dtype torch.float16, manual cast: None
+model_type FLOW
+Requested to load WAN22
+loaded completely 14767.885212707519 9536.402709960938 True
+  0%|          | 0/20 [00:00<?, ?it/s]  5%|▌         | 1/20 [00:01<00:30,  1.63s/it] 10%|█         | 2/20 [00:03<00:27,  1.53s/it] 15%|█▌        | 3/20 [00:04<00:27,  1.61s/it] 20%|██        | 4/20 [00:06<00:24,  1.55s/it] 25%|██▌       | 5/20 [00:07<00:22,  1.52s/it] 30%|███       | 6/20 [00:09<00:20,  1.49s/it] 35%|███▌      | 7/20 [00:10<00:19,  1.48s/it] 40%|████      | 8/20 [00:12<00:17,  1.48s/it] 45%|████▌     | 9/20 [00:13<00:16,  1.47s/it] 50%|█████     | 10/20 [00:15<00:14,  1.47s/it] 55%|█████▌    | 11/20 [00:16<00:13,  1.47s/it] 60%|██████    | 12/20 [00:17<00:11,  1.47s/it] 65%|██████▌   | 13/20 [00:19<00:10,  1.47s/it] 70%|███████   | 14/20 [00:20<00:08,  1.47s/it] 75%|███████▌  | 15/20 [00:22<00:07,  1.47s/it] 80%|████████  | 16/20 [00:23<00:05,  1.47s/it] 85%|████████▌ | 17/20 [00:25<00:04,  1.47s/it] 90%|█████████ | 18/20 [00:26<00:02,  1.47s/it] 95%|█████████▌| 19/20 [00:28<00:01,  1.47s/it]100%|██████████| 20/20 [00:30<00:00,  1.77s/it]100%|██████████| 20/20 [00:30<00:00,  1.54s/it]
+Requested to load WanVAE
+loaded completely 1512.3392944335938 1344.0869674682617 True
+Prompt executed in 77.96 seconds
+got prompt
+loaded completely 10277.802601623534 6419.477203369141 True
+  0%|          | 0/20 [00:00<?, ?it/s]  5%|▌         | 1/20 [00:00<00:08,  2.12it/s] 10%|█         | 2/20 [00:01<00:18,  1.05s/it] 15%|█▌        | 3/20 [00:03<00:20,  1.23s/it] 20%|██        | 4/20 [00:04<00:21,  1.32s/it] 25%|██▌       | 5/20 [00:06<00:20,  1.37s/it] 30%|███       | 6/20 [00:07<00:19,  1.40s/it] 35%|███▌      | 7/20 [00:09<00:18,  1.42s/it] 40%|████      | 8/20 [00:10<00:17,  1.43s/it] 45%|████▌     | 9/20 [00:12<00:15,  1.44s/it] 50%|█████     | 10/20 [00:13<00:14,  1.45s/it] 55%|█████▌    | 11/20 [00:15<00:13,  1.46s/it] 60%|██████    | 12/20 [00:16<00:11,  1.46s/it] 65%|██████▌   | 13/20 [00:18<00:10,  1.46s/it] 70%|███████   | 14/20 [00:19<00:08,  1.47s/it] 75%|███████▌  | 15/20 [00:20<00:07,  1.47s/it] 80%|████████  | 16/20 [00:22<00:05,  1.47s/it] 85%|████████▌ | 17/20 [00:23<00:04,  1.48s/it] 90%|█████████ | 18/20 [00:25<00:02,  1.48s/it] 95%|█████████▌| 19/20 [00:26<00:01,  1.47s/it]100%|██████████| 20/20 [00:29<00:00,  1.77s/it]100%|██████████| 20/20 [00:29<00:00,  1.47s/it]
+Prompt executed in 37.04 seconds

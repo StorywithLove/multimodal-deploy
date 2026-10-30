@@ -12,3 +12,5 @@
 | 详细记录 | [AMD 远程 SSH 与实例运维](platforms/amd_developer/remote-ssh/README.md) | [ModelScope 远程 SSH 与实例记录](platforms/modelscope/remote-ssh/README.md) | [模力方舟实例记录](platforms/moark/remote-ssh/README.md) |
 
 AMD 网络测试只代表当前实例，ModelScope 的下载速度尚未量化。ModelScope 上的 AMD MI300X 训练记录见 [Gemma 4 微调](platforms/amd_developer/notebook_ROCm/257-gemma4-e4b-emotion-lora.md)；它与上表的 NVIDIA A10 是不同实例。
+
+[腾讯云 Cloud Studio](https://cloudstudio.net/) 每日签到可领 2 机时，可与 ModelScope 每天的 8 小时配合使用；机时按实例规格折算，2 机时约可运行 A10 36 分钟，具体额度和有效期以平台页面为准。
