@@ -12,7 +12,7 @@
 | 课程 | 课程记录 | 视频进度 | Notebook 实践 | 当前优先 Notebook |
 | --- | --- | --- | --- | --- |
 | 扩散模型与 AMD AI 生成训练 | [课程笔记](diffusion_models_and_amd_ai_training.md) | 已完成 | 5051 已生成图像；5052 已生成视频 | [5051：Image Generation](https://developer.amd.com.cn/radeon/templates/5051/preview) → [5052：Video Generation](https://developer.amd.com.cn/radeon/templates/5052/preview) |
-| AI 智能体 | [课程笔记](ai_agents.md) | 入门篇、进阶篇已完成 | 尚未完成 | [5048：Agents 101](https://developer.amd.com.cn/radeon/templates/5048/preview) → [5061：Agents 201](https://developer.amd.com.cn/radeon/templates/5061/preview) |
+| AI 智能体 | [课程笔记](ai_agents.md) | 入门篇、进阶篇已完成 | 5048 已完成 | [5061：Agents 201](https://developer.amd.com.cn/radeon/templates/5061/preview) |
 | 大语言模型（LLM）基础与优化 | [课程笔记](llm_basics_and_optimization.md) | 4/4 节已完成 | 尚未开始 | [4978：HF on AMD](https://developer.amd.com.cn/radeon/templates/4978/preview) → [5018：AI on AMD](https://developer.amd.com.cn/radeon/templates/5018/preview) |
 
 课程笔记记录理论、概念和课程脉络；Notebook 的实际步骤、运行日志、结果截图和阻塞问题统一记录在 [notebook_ROCm/](notebook_ROCm/) 中。不要为尚未学习的模板预先创建空记录。
@@ -26,6 +26,15 @@
 - **5051 图像生成**：使用 SDXL Base 1.0、BF16，默认 1664×928、30 步，成功生成图片。用户实测启用 cuDNN 时耗时 15.0 秒，PyTorch 峰值分配显存 10.08 GiB；另一组禁用 cuDNN 时约 14.7 秒、15.31 GiB，单次结果不代表稳定性能差异。脚本与后台日志入口分别为 [5051 脚本](../../scripts/amd-academy/5051_image_generation.py) 和 [运行脚本](../../scripts/amd-academy/run_5051_image_generation.sh)，支持保存去噪预览和 GIF；该动图实现尚未记录实测结果。
 - **5052 视频生成**：已下载 Wan 2.2 TI2V-5B、UMT5 和 VAE，启动 ComfyUI 并由用户确认浏览器可访问，成功生成两个视频。日志显示两次任务各 20 步、耗时 77.96 秒和 37.04 秒，具体提示词和两次配置差异尚未核实；[运行日志](../../results/5052-video-generation/5052_video_generation_20261030_172506_DDqAN1.log)为运行期间快照，视频保存在本地 `results/5052-video-generation/`，不纳入 Git。入口为 [5052 脚本](../../scripts/amd-academy/5052_video_generation.py) 和 [运行脚本](../../scripts/amd-academy/run_5052_video_generation.sh)。当前实例访问地址：[ComfyUI](https://dsw-gateway-cn-hangzhou.data.aliyun.com/dsw-2318316/proxy/8000/)，通用格式为 `https://dsw-gateway-cn-hangzhou.data.aliyun.com/dsw-<实例编号>/proxy/<端口>/`；实例编号及登录状态变化后需重新确认。模型与输出位于 `/root/tmp/ComfyUI-5052`，实例回收前应备份。
 
+### 2026-10-31：5048 Agents 101 实践
+
+基于本地 Qwen3.5-9B vLLM 服务完成 [5048 Agents 101 Notebook](notebook_ROCm/5048_agents_101.ipynb)，验证了三种工具接入方式：
+
+- **自定义 Python 函数工具**：将本地日期时间函数注册给 Pydantic AI Agent，并由模型调用。
+- **Python MCP 工具**：通过 `MCPServerStdio` 启动 `mcp_server_time`，完成时区日期时间查询。
+- **Node.js MCP 工具**：启动 Airbnb MCP server 并完成住宿搜索；这是搜索演示，预订仍需在 Airbnb 页面确认。
+
+当前智能体课程进度：5048 已完成，下一步实践 [5061 Agents 201](https://developer.amd.com.cn/radeon/templates/5061/preview)。
 ## 二、41 个模板的分类与功能
 
 以下按 Notebook 的**主要学习目标**归为 8 个大类。一个模板可能同时涉及多个方向，例如智能体依赖 vLLM、视觉模型也涉及微调；为方便查找，每个模板只在最主要的大类中列出一次。
