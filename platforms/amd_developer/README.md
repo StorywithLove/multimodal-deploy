@@ -12,7 +12,7 @@
 | 课程 | 课程记录 | 视频进度 | Notebook 实践 | 当前优先 Notebook |
 | --- | --- | --- | --- | --- |
 | 扩散模型与 AMD AI 生成训练 | [课程笔记](diffusion_models_and_amd_ai_training.md) | 已完成 | 5051 已生成图像；5052 已生成视频 | [5051：Image Generation](https://developer.amd.com.cn/radeon/templates/5051/preview) → [5052：Video Generation](https://developer.amd.com.cn/radeon/templates/5052/preview) |
-| AI 智能体 | [课程笔记](ai_agents.md) | 入门篇、进阶篇已完成 | 5048 已完成 | [5061：Agents 201](https://developer.amd.com.cn/radeon/templates/5061/preview) |
+| AI 智能体 | [课程笔记](ai_agents.md) | 入门篇、进阶篇已完成 | 5048 已完成 | [5048：Agents 101](https://developer.amd.com.cn/radeon/templates/5048/preview) → [5061：Agents 201](https://developer.amd.com.cn/radeon/templates/5061/preview) |
 | 大语言模型（LLM）基础与优化 | [课程笔记](llm_basics_and_optimization.md) | 4/4 节已完成 | 尚未开始 | [4978：HF on AMD](https://developer.amd.com.cn/radeon/templates/4978/preview) → [5018：AI on AMD](https://developer.amd.com.cn/radeon/templates/5018/preview) |
 
 课程笔记记录理论、概念和课程脉络；Notebook 的实际步骤、运行日志、结果截图和阻塞问题统一记录在 [notebook_ROCm/](notebook_ROCm/) 中。不要为尚未学习的模板预先创建空记录。
