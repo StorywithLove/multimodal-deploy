@@ -26,3 +26,6 @@ tmp/
 *.log
 nohup.out
 results/*-pre-hbm.json
+
+# 本机编辑器配置
+.vscode/

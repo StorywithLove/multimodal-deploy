@@ -106,7 +106,7 @@ def prepare_training_data(dataset):
 
 
 def load_model_and_tokenizer(model_dir):
-    """加载对话模板和 BF16 基础模型，并放到第一张 CUDA 卡。"""
+    """加载对话模板和 BF16 基础模型，并放到 CUDA 卡。"""
     tokenizer = AutoTokenizer.from_pretrained(str(model_dir), use_fast=True, trust_remote_code=True)
     if tokenizer.pad_token is None:
         # 将结束符号作为填充符号

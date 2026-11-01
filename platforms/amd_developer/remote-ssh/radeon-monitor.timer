@@ -1,0 +1,11 @@
+[Unit]
+Description=Radeon Cloud capacity every 30 minutes for November 2026
+
+[Timer]
+OnCalendar=2026-11-01..30 *:00,30:00 Asia/Shanghai
+OnCalendar=2026-12-01 00..14:00,30:00 Asia/Shanghai
+AccuracySec=15s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

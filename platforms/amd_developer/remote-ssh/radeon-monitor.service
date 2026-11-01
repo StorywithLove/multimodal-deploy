@@ -1,0 +1,17 @@
+[Unit]
+Description=Read Radeon Cloud GPU capacity snapshot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=opc
+Group=opc
+UMask=0077
+ExecStart=/usr/bin/python3 /data/lcx/codex/radeon-monitor/radeon_monitor.py
+TimeoutStartSec=300
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/data/lcx/codex/radeon-monitor /data/lcx/codex/.codex
