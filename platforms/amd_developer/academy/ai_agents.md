@@ -12,7 +12,7 @@
 
 ### 1.1 技术栈：先区分四个层次
 
-![课程展示的智能体框架](images/agent-frameworks.png)
+![课程展示的智能体框架](../images/agent-frameworks.png)
 
 课程展示了 PydanticAI、LangGraph、OpenAI Agents SDK、CrewAI 等智能体框架。它们用于组织模型、工具和执行流程；A2A 解决独立智能体之间的通信。
 
@@ -23,7 +23,7 @@
 | 模型服务 | vLLM、Ollama | 加载模型权重并提供推理 API |
 | 硬件与计算环境 | AMD Instinct GPU、EPYC CPU、ROCm 等 | 执行模型计算及应用逻辑 |
 
-![框架、通信协议、硬件与模型服务的分层](images/agent-stack.png)
+![框架、通信协议、硬件与模型服务的分层](../images/agent-stack.png)
 
 **Llama 是模型；vLLM 和 Ollama 运行模型；CrewAI 等框架利用模型构建智能体；A2A 让智能体之间协作。**
 
@@ -62,7 +62,7 @@ flowchart TD
 
 #### 1.3.1 CrewAI 定义角色、目标和工具
 
-![CrewAI 汉堡智能体连接本地 vLLM 服务](images/agent-crewai-vllm.png)
+![CrewAI 汉堡智能体连接本地 vLLM 服务](../images/agent-crewai-vllm.png)
 
 | 配置 | 作用 |
 | --- | --- |
@@ -114,7 +114,7 @@ curl http://localhost:8088/v1/models
 
 #### 1.3.4 使用 A2A 对外提供汉堡智能体服务
 
-![课程中的 AgentSkill、AgentCard 与 A2AServer](images/agent-a2a-server.png)
+![课程中的 AgentSkill、AgentCard 与 A2AServer](../images/agent-a2a-server.png)
 
 截图中的三个对象分别负责能力描述、名片描述和网络服务。
 
@@ -154,7 +154,7 @@ curl http://localhost:8088/v1/models
 
 #### 1.4.1 LangGraph 组织模型与工具的执行流程
 
-![LangGraph 披萨智能体的模型、工具和执行图](images/agent-langgraph-structure.png)
+![LangGraph 披萨智能体的模型、工具和执行图](../images/agent-langgraph-structure.png)
 
 | 代码元素 | 作用 |
 | --- | --- |
@@ -168,7 +168,7 @@ curl http://localhost:8088/v1/models
 
 #### 1.4.2 Ollama 管理和运行本地模型
 
-![ChatOllama 指定 Llama 3.1 模型](images/agent-ollama-model.png)
+![ChatOllama 指定 Llama 3.1 模型](../images/agent-ollama-model.png)
 
 ```python
 from langchain_ollama import ChatOllama
@@ -209,7 +209,7 @@ ollama run llama3.1:8b
 
 #### 1.5.2 Runner 驱动执行
 
-![Google ADK Runner、事件循环及服务存储](images/agent-adk-runtime.png)
+![Google ADK Runner、事件循环及服务存储](../images/agent-adk-runtime.png)
 
 图中 Runner 负责协调执行：接收输入、取得会话上下文、驱动智能体逻辑，并通过事件流返回执行过程与结果。会话、状态、记忆及产物则交给对应服务管理。
 
