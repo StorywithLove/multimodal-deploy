@@ -162,7 +162,14 @@ export http_proxy="$HTTP_PROXY" https_proxy="$HTTPS_PROXY"
 本机已配置 `radeon-gpu` SSH 别名，VS Code Remote-SSH 可选择该别名；当前实例直连命令（实例重建后地址、端口可能变化）：
 
 ```powershell
-ssh -i "$env:USERPROFILE\.radeon-cloud\keys\code12ab@gmail.com\id_ed25519" -p 35841 root@36.150.116.206
+ssh -i "$env:USERPROFILE\.radeon-cloud\keys\code12ab@gmail.com\id_ed25519" -p 32784 root@36.150.116.206
+```
+
+端口每次重建都会变（2026-11-01 为 32784），以平台控制台当前显示为准。主机密钥同样会变，换实例后需先更新 `known_hosts`，否则报 `Host key verification failed`：
+
+```bash
+ssh-keyscan -p 32784 36.150.116.206 2>/dev/null | grep -v '^#' >> ~/.ssh/known_hosts
+ssh-keygen -R "[36.150.116.206]:<旧端口>"
 ```
 
 #### VS Code Remote-SSH：启用端口转发

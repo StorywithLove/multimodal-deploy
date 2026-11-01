@@ -201,7 +201,49 @@ curl -s --noproxy '*' http://127.0.0.1:8088/v1/chat/completions \
 
 ---
 
-## 5. 备份清单
+## 5. 换实例后同步 wheels
+
+实例重建（不是重启）会拿到一个**全新实例**：hostname、SSH 端口、主机密钥全变，`/workspace` 是空的新卷，旧卷不跟随。这时 wheels 得重新上传。
+
+**本机上行是硬瓶颈，实测 882 KB/s**，且不随并发增加：
+
+| 方式 | 实测 |
+|---|---|
+| 单路 `ssh` 传 30 MB | 34 s → **882 KB/s** |
+| 3 路并行传 30 MB | 33 s → **909 KB/s** |
+
+说明是上行带宽或平台入口限速，不是 TCP 窗口问题，多开连接没有意义。2.2 GB 满速也要约 **42 分钟**。
+
+实际跑完 2.34 GB 用了 **23 分钟**（16:05→16:28 UTC，均速约 1.7 MB/s），比估算快，因为 `sync-to-amd.sh` 从断点 157 MB 处接着传，只补了剩余的 1.79 GB。
+
+**所以不能用 `scp`**：它没有断点续传，一次 `Connection reset by peer` 就得从 0 重来（实测传到 152.7 MB 时被重置，前功尽弃）。改用本地备份目录里的 `sync-to-amd.sh`，按远端已有字节数续传：
+
+```bash
+cd "D:/用户资料/AI模型/vLLM/vLLM-rocm-7.2.1"
+bash sync-to-amd.sh                       # 默认同步到 radeon-gpu:/workspace/agents_201
+DEST=/workspace/other bash sync-to-amd.sh # 换目标目录
+```
+
+它逐个文件比对远端大小，用 `tail -c +N | ssh 'cat >>'` 从断点接着写；每个文件最多重试 20 次；全部传完自动跑 `sha256sum -c`。中途断了直接重跑同一条命令即可。
+
+**容量注意**：新实例的 `/workspace` 是 25 GB 的 NFS 卷（上一台是 98 GB 的 loop 卷，规格不固定）。wheels 2.2 GB + venv 8.3 GB = 10.5 GB 放得下，19 GB 的模型放不下，必须留在 `/root/tmp`——脚本的默认值正是这样分布的。
+
+### 5.1 查询与关闭实例（rcc CLI）
+
+`rcc` 装在本机 conda 的 `stock` 环境里，不在默认 PATH：
+
+```powershell
+conda activate stock
+rcc instance list                 # 显示当前实例 ID，如 rgapi-one-click-25248-a539cf14
+rcc instance status               # 就绪状态
+rcc instance delete --yes         # 删除当前实例，不可恢复
+```
+
+实例 ID、启动时间可以从两个地方确认：`rcc instance list`，或实例内 `ps -o lstart= -p 1`（Jupyter 起于容器启动时，时间基本一致）。按小时计费时以这个时刻起算。
+
+`/workspace` 由平台持久化：删除实例后重新启动，里面的 wheels 等文件仍在，不用重传。但 overlay 上的 venv、模型、`/root/.cache` 会随容器重置。即便如此，本地那份 wheels 备份仍要保留——它不依赖平台，也不占用实例费用。
+
+## 6. 备份清单
 
 留在本地的只有两样，合计 **2.2 GB**：
 
