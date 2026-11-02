@@ -12,7 +12,7 @@
 | 课程 | 课程记录 | 视频进度 | Notebook 实践 | 当前优先 Notebook |
 | --- | --- | --- | --- | --- |
 | 扩散模型与 AMD AI 生成训练 | [课程笔记](academy/diffusion_models_and_amd_ai_training.md) | 已完成 | 5051 已生成图像；5052 已生成视频 | [5051：Image Generation](https://developer.amd.com.cn/radeon/templates/5051/preview) → [5052：Video Generation](https://developer.amd.com.cn/radeon/templates/5052/preview) |
-| AI 智能体 | [课程笔记](academy/ai_agents.md) | 入门篇、进阶篇已完成 | 5048 已完成 | [5048：Agents 101](https://developer.amd.com.cn/radeon/templates/5048/preview) → [5061：Agents 201](https://developer.amd.com.cn/radeon/templates/5061/preview) |
+| AI 智能体 | [课程笔记](academy/ai_agents.md) | 入门篇、进阶篇已完成 | 5048、5061 已完成 | [5048：Agents 101](https://developer.amd.com.cn/radeon/templates/5048/preview) → [5061：Agents 201](https://developer.amd.com.cn/radeon/templates/5061/preview) |
 | 大语言模型（LLM）基础与优化 | [课程笔记](academy/llm_basics_and_optimization.md) | 4/4 节已完成 | 尚未开始 | [4978：HF on AMD](https://developer.amd.com.cn/radeon/templates/4978/preview) → [5018：AI on AMD](https://developer.amd.com.cn/radeon/templates/5018/preview) |
 
 课程笔记记录理论、概念和课程脉络；Notebook 的实际步骤、运行日志、结果截图和阻塞问题统一记录在 [notebook_ROCm/](notebook_ROCm/) 中。不要为尚未学习的模板预先创建空记录。
@@ -34,7 +34,16 @@
 - **Python MCP 工具**：通过 `MCPServerStdio` 启动 `mcp_server_time`，完成时区日期时间查询。
 - **Node.js MCP 工具**：启动 Airbnb MCP server 并完成住宿搜索；这是搜索演示，预订仍需在 Airbnb 页面确认。
 
-当前智能体课程进度：5048 已完成，下一步实践 [5061 Agents 201](https://developer.amd.com.cn/radeon/templates/5061/preview)。
+### 2026-11-02：5061 Agents 201 实践
+
+基于 Google ADK + A2A 完成多智能体点餐系统，详细架构与配置见 [5061_agent_201.md](notebook_ROCm/5061_agent_201.md)。
+
+- **总体结构**：Gradio 作为统一入口，PurchasingAgent 根据 AgentCard 选择卖家，通过 A2A 调用披萨（LangGraph + Ollama）与汉堡（CrewAI + vLLM）两个子 Agent。
+- **模型分配**：root 与披萨使用 Ollama `qwen35`，汉堡使用本地 vLLM `qwen35`（Qwen3.5-9B）。
+- **运行结果**：卡片发现、Bearer/Basic 认证、菜单查询、下单及披萨两轮确认均已验证；配置已抽到 `.env`，并用 `run_agents.sh` 替代 tmux 管理进程。
+- **已知问题**：CrewAI 收尾空响应会触发整条 crew 重试，导致同一需求重复下单，待加幂等修复。
+
+当前智能体课程进度：5048、5061 已完成。
 ## 二、41 个模板的分类与功能
 
 以下按 Notebook 的**主要学习目标**归为 8 个大类。一个模板可能同时涉及多个方向，例如智能体依赖 vLLM、视觉模型也涉及微调；为方便查找，每个模板只在最主要的大类中列出一次。

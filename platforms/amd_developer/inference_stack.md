@@ -7,6 +7,8 @@
 
 网络侧的问题见 [remote-ssh/README.md](remote-ssh/README.md)。
 
+平台 sshd 默认 `AllowTcpForwarding no`，本地 `ssh -L` 会报 `administratively prohibited`；实例上跑 `bash /workspace/enable-ssh-forward.sh` 放开转发（`/tmp` 里的配置重启即复原，需重跑）。
+
 ---
 
 ## 1. 环境基线
@@ -374,6 +376,15 @@ curl -s --noproxy '*' http://127.0.0.1:11434/api/chat \
 4. **CUDA 后端要手动删。** base 包同时带 `cuda_v12` / `cuda_v13`，共 2.4 GB，AMD 机器上纯浪费持久卷。
 5. **模型默认长思考。** 和 vLLM 一样，`num_predict` 给小了会出现「请求成功但正文为空」。Ollama 侧用顶层 `"think": false`。
 6. **重启后 tmux 和模型都没了。** 二进制在持久卷，`tmux ls` 为空；`/root/tmp` 清空意味着 GGUF 和 blob 都没了。恢复顺序：`start.sh serve` → 重下 GGUF → `ollama create`，约 2 分钟。
+7. **教程 `requirements.txt` 里有一组互斥 pin，按它装必炸。** `langchain==1.1.0` 声明 `langgraph<1.1.0`，但 `langgraph-prebuilt` 1.0.9～1.0.13 **全部** `from langgraph.runtime import ExecutionInfo`，而 `ExecutionInfo` 只在 langgraph **1.2.x** 存在——于是 `from langchain.agents import create_agent` 报 `ImportError: cannot import name 'ExecutionInfo'`。四个包必须一起抬：`langchain 1.4.7 / langgraph 1.2.19 / langgraph-prebuilt 1.1.1 / langgraph-checkpoint 4.3.1`；crewai 1.6.1 不依赖 langchain，不受影响。修复命令：
+
+   ```bash
+   /opt/venv/bin/uv pip install --python /root/tmp/agents-201/.venv/bin/python \
+     --upgrade langchain langgraph langgraph-prebuilt langgraph-checkpoint \
+     -i https://mirrors.aliyun.com/pypi/simple/
+   ```
+
+   原文件是从教程仓库 clone 来的，**没有改**；venv 在 `/root/tmp`，重启后按原 pin 重建会原样复发。
 
 ---
 
