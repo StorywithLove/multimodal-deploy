@@ -13,7 +13,7 @@
 | --- | --- | --- | --- | --- |
 | 扩散模型与 AMD AI 生成训练 | [课程笔记](academy/diffusion_models_and_amd_ai_training.md) | 已完成 | 5051 已生成图像；5052 已生成视频 | [5051：Image Generation](https://developer.amd.com.cn/radeon/templates/5051/preview) → [5052：Video Generation](https://developer.amd.com.cn/radeon/templates/5052/preview) |
 | AI 智能体 | [课程笔记](academy/ai_agents.md) | 入门篇、进阶篇已完成 | 5048、5061 已完成 | [5048：Agents 101](https://developer.amd.com.cn/radeon/templates/5048/preview) → [5061：Agents 201](https://developer.amd.com.cn/radeon/templates/5061/preview) |
-| 大语言模型（LLM）基础与优化 | [课程笔记](academy/llm_basics_and_optimization.md) | 4/4 节已完成 | 尚未开始 | [4978：HF on AMD](https://developer.amd.com.cn/radeon/templates/4978/preview) → [5018：AI on AMD](https://developer.amd.com.cn/radeon/templates/5018/preview) |
+| 大语言模型（LLM）基础与优化 | [课程笔记](academy/llm_basics_and_optimization.md) | 4/4 节已完成 | 4978、5018 已完成 | [4978：HF on AMD](https://developer.amd.com.cn/radeon/templates/4978/preview) → [5018：AI on AMD](https://developer.amd.com.cn/radeon/templates/5018/preview) |
 
 课程笔记记录理论、概念和课程脉络；Notebook 的实际步骤、运行日志、结果截图和阻塞问题统一记录在 [notebook_ROCm/](notebook_ROCm/) 中。不要为尚未学习的模板预先创建空记录。
 
@@ -44,6 +44,13 @@
 - **已知问题**：CrewAI 收尾空响应会触发整条 crew 重试，导致同一需求重复下单，待加幂等修复。
 
 当前智能体课程进度：5048、5061 已完成。
+
+### 2026-11-03：HF on AMD 实践
+
+完成 [HF on AMD Notebook](notebook_ROCm/4098_HF_AMD.ipynb)（课程总览中的 4978 模板，本地文件名为 4098）。使用 Qwen3-0.6B 实践了分词、输入嵌入、上下文表示和逐 token 生成；使用 BERT 实践了掩码预测与注意力热力图，并绘制词类别的输入嵌入 PCA 图。Notebook 保存了运行输出；其中 Qwen 默认注意力实现未返回注意力权重，输出提示需切换支持的实现。
+
+完成 [5018 AI on AMD Notebook](notebook_ROCm/5018_AI_AMD.ipynb)：使用 vLLM 和 Qwen3-4B-Instruct-2507 实践模型部署、连续对话、英文单词测验与生成参数调整。
+
 ## 二、41 个模板的分类与功能
 
 以下按 Notebook 的**主要学习目标**归为 8 个大类。一个模板可能同时涉及多个方向，例如智能体依赖 vLLM、视觉模型也涉及微调；为方便查找，每个模板只在最主要的大类中列出一次。
